@@ -8,13 +8,14 @@ import com.project.codinviec.response.BaseResponse;
 import com.project.codinviec.service.payment.PaymentService;
 import com.project.codinviec.service.payment.VNPAYService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/payment")
@@ -22,6 +23,9 @@ import java.util.Map;
 public class PaymentController {
     private final PaymentService paymentService;
     private final VNPAYService vnpayService;
+    @Value("${client.url}")
+    private String clientUrl;
+
 
     @GetMapping
     public ResponseEntity<?> getAll(PageRequestCustom pageRequestCustom) {
@@ -71,37 +75,26 @@ public class PaymentController {
 
 
     @GetMapping("/vnpay/callback")
-    public ResponseEntity<?> paymentCallback(HttpServletRequest request) {
+    public ResponseEntity<?> paymentCallback(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        // Bước 1: Lấy tất cả query parameters từ VNPAY
-        Map<String, String> params = new HashMap<>();
+        String txnRef = request.getParameter("vnp_TxnRef");
+        String responseCode = request.getParameter("vnp_ResponseCode");
 
-        // Lặp qua tất cả parameter names
-        for (String paramName : request.getParameterMap().keySet()) {
-            // Lấy giá trị đầu tiên của mỗi parameter
-            // (VNPAY không gửi duplicate parameters)
-            String paramValue = request.getParameter(paramName);
-            params.put(paramName, paramValue);
-        }
+//      Tạm sử dụng ở callback vì chưa có domain thật khi sử dụng Ipn
+        VNPAYCallBackResponseDTO responseDTO = vnpayService.handleIpn(request);
 
-        // Bước 2: Gọi service để xử lý callback
-        VNPAYCallBackResponseDTO response = vnpayService.handleCallBack(params);
-
-        // Bước 3: Xử lý response dựa trên code
-        if ("00".equals(response.getCode())) {
-            // Thanh toán thành công
-            return ResponseEntity.ok(BaseResponse.success(response, "Thanh toán thành công"));
+        if ("00".equals(responseCode)) {
+            response.sendRedirect(clientUrl+ "/status=completed");
+            return ResponseEntity.ok(BaseResponse.success(responseDTO, "Thanh toán thành công!"));
         } else {
-            // Thanh toán thất bại hoặc lỗi
-            return ResponseEntity.ok(BaseResponse.error(
-                    "Thanh toán thất bại: " + response.getMessage(),
-                    org.springframework.http.HttpStatus.BAD_REQUEST
-            ));
+            response.sendRedirect(clientUrl+ "/status=failed");
+            return ResponseEntity.ok(BaseResponse.success("", "Thanh toán thất bại!"));
         }
     }
 
-
-
-
-
+    @PostMapping("/vnpay/ipn")
+    public ResponseEntity<?> ipn(HttpServletRequest request, HttpServletResponse response) {
+        VNPAYCallBackResponseDTO responseDTO = vnpayService.handleIpn(request);
+        return ResponseEntity.ok(BaseResponse.success(responseDTO, "Thanh toán thành công!"));
+    }
 }

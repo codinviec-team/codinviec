@@ -12,4 +12,5 @@ public class VNPAYConfig {
     private String hashSecret;
     private String payUrl;
     private String returnUrl;
+    private String ipnUrl;
 }

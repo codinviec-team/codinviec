@@ -69,7 +69,7 @@ vnpay:
   hash-secret: ${VNP_HASHSECRET}
   pay-url: ${VNP_URL}
   return-url: ${VNP_RETURN_URL}
-
+  ipn-url: ${VNP_IPN_URL}
 
 logging:
   level:

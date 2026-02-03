@@ -127,6 +127,19 @@ public class VNPayHelper {
         return ipAddress;
     }
 
+    public String getIpAddressV4(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty()) {
+            ip = request.getRemoteAddr();
+        }
+
+        // Nếu là IPv6 localhost hoặc IPv6 thật → dùng IPv4 giả
+        if (ip.contains(":")) {
+            return "127.0.0.1";
+        }
+        return ip;
+    }
+
     /**
      * Tạo mã giao dịch ngẫu nhiên
      * VNPAY yêu cầu mỗi giao dịch phải có mã duy nhất
