@@ -51,7 +51,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
                 // load user từ DB
                 User user = userRepository.findById(jwtUser.getUserId())
                         .orElseThrow(() -> new NotFoundIdExceptionHandler("Không tìm thấy user!"));
-//                lỗi 410 bị block nhé
+                //                lỗi 410 bị block nhé
                 if (user.getIsBlock()) {
 //                    Xóa cookies refresh
                     cookieHelper.clearRefreshTokenCookie(response);
@@ -63,7 +63,6 @@ public class AuthenticationFilter extends OncePerRequestFilter {
                     new ObjectMapper().writeValue(response.getOutputStream(), baseResponse);
                     return;
                 }
-
 
                 List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
                 GrantedAuthority grantedAuthority = new SimpleGrantedAuthority("ROLE_" + jwtUser.getRole());

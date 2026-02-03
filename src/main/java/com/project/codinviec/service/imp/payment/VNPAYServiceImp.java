@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -104,99 +105,108 @@ public class VNPAYServiceImp implements VNPAYService {
     }
 
     @Override
-    public VNPAYCallBackResponseDTO handleCallBack(Map<String, String> params) {
-        // Bước 1: Lấy các tham số quan trọng từ VNPAY callback
-        String vnp_ResponseCode = params.get("vnp_ResponseCode");
-        String vnp_TransactionStatus = params.get("vnp_TransactionStatus");
-        String vnp_TxnRef = params.get("vnp_TxnRef");
-        String vnp_Amount = params.get("vnp_Amount");
-//        String vnp_TransactionNo = params.get("vnp_TransactionNo");
-        String vnp_SecureHash = params.get("vnp_SecureHash");
+    public VNPAYCallBackResponseDTO handleIpn(HttpServletRequest request) {
+        Map<String, String> params = request.getParameterMap().entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue()[0]
+                ));
 
-        // Bước 2: Xác thực chữ ký (checksum)
-        // Tạo bản sao của params và loại bỏ vnp_SecureHash để tính toán lại
-        Map<String, String> vnp_Params = new HashMap<>(params);
-        vnp_Params.remove("vnp_SecureHash");
-        vnp_Params.remove("vnp_SecureHashType"); // Loại bỏ nếu có
+        // 1. Verify checksum
+        String vnpSecureHash = params.get("vnp_SecureHash");
 
-        // Tính toán lại chữ ký
-        String checkSum = vnPayHelper.hashAllFields(vnp_Params, vnpayConfig.getHashSecret());
+        Map<String, String> vnpParams = new HashMap<>(params);
+        vnpParams.remove("vnp_SecureHash");
+        vnpParams.remove("vnp_SecureHashType");
 
-        // So sánh chữ ký
-        if (!checkSum.equals(vnp_SecureHash)) {
+        String checkSum = vnPayHelper.hashAllFields(vnpParams, vnpayConfig.getHashSecret());
+        if (!checkSum.equals(vnpSecureHash)) {
             return VNPAYCallBackResponseDTO.builder()
                     .code("97")
-                    .message("Checksum failed - Chữ ký không hợp lệ")
+                    .message("Invalid signature")
                     .build();
         }
 
-        // Bước 3: Lấy paymentId từ vnp_TxnRef
-        // Format: "paymentId_randomNumber" (ví dụ: "123_45678901")
-        String[] txnRefParts = vnp_TxnRef.split("_");
-        if (txnRefParts.length < 1) {
+        // 2. Parse paymentId từ vnp_TxnRef
+        String vnpTxnRef = params.get("vnp_TxnRef");
+        if (vnpTxnRef == null || !vnpTxnRef.contains("_")) {
             return VNPAYCallBackResponseDTO.builder()
                     .code("01")
-                    .message("Invalid transaction reference - Mã giao dịch không hợp lệ")
+                    .message("Invalid TxnRef")
                     .build();
         }
 
         Integer paymentId;
         try {
-            paymentId = Integer.parseInt(txnRefParts[0]);
-        } catch (NumberFormatException e) {
+            paymentId = Integer.parseInt(vnpTxnRef.split("_")[0]);
+        } catch (Exception e) {
             return VNPAYCallBackResponseDTO.builder()
                     .code("01")
-                    .message("Invalid transaction reference - Mã giao dịch không hợp lệ")
+                    .message("Invalid paymentId")
                     .build();
         }
 
-        // Bước 4: Tìm Payment record
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new NotFoundIdExceptionHandler("Không tìm thấy Payment với ID: " + paymentId));
-
-        // Bước 5: Kiểm tra số tiền có khớp không
-        // VNPAY trả về số tiền đã nhân 100, nên cần so sánh với amount * 100
-        Long expectedAmount = (long)(payment.getServiceProduct().getPrice() * 100);
-        if (!expectedAmount.toString().equals(vnp_Amount)) {
+        // 3. Find payment (SAFE – không throw)
+        Optional<Payment> optPayment = paymentRepository.findById(paymentId);
+        if (optPayment.isEmpty()) {
             return VNPAYCallBackResponseDTO.builder()
-                    .code("04")
-                    .message("Invalid amount - Số tiền không khớp")
-                    .paymentId(paymentId)
+                    .code("01")
+                    .message("Payment not found")
                     .build();
         }
 
-        // Bước 6: Xử lý kết quả thanh toán
-        // "00" = thành công
-        if ("00".equals(vnp_ResponseCode) && "00".equals(vnp_TransactionStatus)) {
-            // Thanh toán thành công
-            PaymentStatus successStatus = paymentStatusRepository.findByNameIgnoreCase("Completed") // COMPLETED
-                    .orElseThrow(() -> new NotFoundIdExceptionHandler("Không tìm thấy Payment Status COMPLETED"));
+        Payment payment = optPayment.get();
 
-            payment.setPaymentStatus(successStatus);
-            payment.setUpdatedDate(LocalDateTime.now());
-            paymentRepository.save(payment);
-
+        // 4. Idempotent check (CỰC KỲ QUAN TRỌNG)
+        if ("Completed".equalsIgnoreCase(payment.getPaymentStatus().getName())) {
             return VNPAYCallBackResponseDTO.builder()
                     .code("00")
-                    .message("Success - Thanh toán thành công")
-                    .paymentId(paymentId)
-                    .build();
-        } else {
-            // Thanh toán thất bại
-            PaymentStatus failedStatus = paymentStatusRepository.findByNameIgnoreCase("Failed") // FAILED
-                    .orElseThrow(() -> new NotFoundIdExceptionHandler("Không tìm thấy Payment Status FAILED"));
-
-            payment.setPaymentStatus(failedStatus);
-            payment.setUpdatedDate(LocalDateTime.now());
-            paymentRepository.save(payment);
-
-            return VNPAYCallBackResponseDTO.builder()
-                    .code(vnp_ResponseCode != null ? vnp_ResponseCode : "99")
-                    .message("Payment failed - Thanh toán thất bại")
+                    .message("Already processed")
                     .paymentId(paymentId)
                     .build();
         }
+
+        // 5. Check amount
+        long vnpAmount = Long.parseLong(params.get("vnp_Amount"));
+        long expectedAmount = (long) (payment.getServiceProduct().getPrice() * 100);
+
+        if (vnpAmount != expectedAmount) {
+            return VNPAYCallBackResponseDTO.builder()
+                    .code("04")
+                    .message("Invalid amount")
+                    .paymentId(paymentId)
+                    .build();
+        }
+
+        // 6. Xử lý trạng thái
+        String responseCode = params.get("vnp_ResponseCode");
+        String transactionStatus = params.get("vnp_TransactionStatus");
+
+        if ("00".equals(responseCode) && "00".equals(transactionStatus)) {
+            PaymentStatus success = paymentStatusRepository
+                    .findByNameIgnoreCase("Completed")
+                    .orElseThrow(); // chỉ throw ở đây vì lỗi data nội bộ
+
+            payment.setPaymentStatus(success);
+        } else {
+            PaymentStatus failed = paymentStatusRepository
+                    .findByNameIgnoreCase("Failed")
+                    .orElseThrow();
+
+            payment.setPaymentStatus(failed);
+        }
+
+        payment.setUpdatedDate(LocalDateTime.now());
+        paymentRepository.save(payment);
+
+        // 7. Trả OK cho VNPay (BẮT BUỘC)
+        return VNPAYCallBackResponseDTO.builder()
+                .code("00")
+                .message("Confirm Success")
+                .paymentId(paymentId)
+                .build();
     }
+
 
     public String buildPaymentUrl(String vnp_TxnRef, Double amount, String orderInfo,
                                   String orderType, HttpServletRequest request) {
@@ -210,9 +220,12 @@ public class VNPAYServiceImp implements VNPAYService {
         String vnp_Amount = String.valueOf((long) (amount * 100));
         String vnp_CurrCode = "VND";
         String vnp_IpAddr = vnPayHelper.getIpAddress(request);
-        String vnp_Locale = "vn"; // "vn" hoặc "en"
+        String vnp_Locale = "vn";
         String vnp_ReturnUrl = vnpayConfig.getReturnUrl();
         String vnp_OrderType = orderType != null && !orderType.isEmpty() ? orderType : "other";
+
+//        Tạm thời chưa có domain nên chưa thể làm IPN server call servel
+//        String vnp_IpnUrl = vnpayConfig.getIpnUrl();
 
         // Tạo Map chứa tất cả tham số
         Map<String, String> vnp_Params = new HashMap<>();
@@ -227,6 +240,8 @@ public class VNPAYServiceImp implements VNPAYService {
         vnp_Params.put("vnp_Locale", vnp_Locale);
         vnp_Params.put("vnp_ReturnUrl", vnp_ReturnUrl);
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
+//        vnp_Params.put("vnp_IpnUrl", vnp_IpnUrl);
+
 
         // Tạo thời gian tạo giao dịch (format: yyyyMMddHHmmss)
         Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
