@@ -1,7 +1,12 @@
 package com.project.codinviec.service.imp.auth;
 
+import com.project.codinviec.dto.CompanyAddressDTO;
+import com.project.codinviec.dto.StatusSpecialDTO;
 import com.project.codinviec.dto.auth.CompanyDTO;
+import com.project.codinviec.entity.CompanyAddress;
 import com.project.codinviec.entity.CompanySize;
+import com.project.codinviec.entity.StatusSpecial;
+import com.project.codinviec.entity.StatusSpecialCompany;
 import com.project.codinviec.entity.auth.Company;
 import com.project.codinviec.exception.common.NotFoundIdExceptionHandler;
 import com.project.codinviec.mapper.CompanyAddressMapper;
@@ -25,7 +30,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,24 +52,30 @@ public class CompanyServiceImp implements CompanyService {
 
     @Override
     public List<CompanyDTO> getAllCompany() {
-        List<CompanyDTO> companyDTOS = companyRepository.findAll().stream()
-                .map(companyMapper::companyToCompanyDTO)
-                .toList();
+        List<Company> listCompany = companyRepository.findAllWithCompanySize();
+        List<String> listIdCompany = listCompany.stream().map(Company::getId).toList();
 
-        for (CompanyDTO companyDTO : companyDTOS) {
-            companyDTO.setStatusSpecials(statusSpecialMapper
-                    .StatusSpecialCompanyToStatusSpecialDTO(statusSpecialCompanyRepository
-                            .findByIdCompany_Id(companyDTO.getId())));
-            companyDTO.setCompanySize(companySizeMapper.companySizeToCompanySizeDTO(companySizeRepository
-                    .findByCompanies_Id(companyDTO
-                            .getId()).orElse(null)));
+        List<CompanyAddress> companyAddressList = companyAddressRepository.findByCompanyIdsWithLocation(listIdCompany);
+        List<StatusSpecialCompany> statusSpecialCompanyRepositoryList = statusSpecialCompanyRepository.findByCompanyIdsWithStatus(listIdCompany);
 
+
+        Map<String, List<CompanyAddress>> mapCompanyAddress = companyAddressList.stream()
+                .collect(Collectors.groupingBy((a -> a.getCompany().getId())));
+
+        Map<String, List<StatusSpecialCompany>> mapStatusSpecical = statusSpecialCompanyRepositoryList.stream()
+                .collect(Collectors.groupingBy( a-> a.getIdCompany().getId()));
+
+        List<CompanyDTO> listCompanyDTO = listCompany.stream().map(companyMapper::companyToCompanyDTO).toList();
+        for (CompanyDTO companyDTO : listCompanyDTO) {
             companyDTO.setCompanyAddress(
-                    companyAddressRepository.findByCompany_Id(companyDTO.getId())
-                            .stream().map(companyAddressMapper::toCompanyAddressDTO).toList()
+                    mapCompanyAddress.getOrDefault(companyDTO.getId(), List.of()).stream().map(a -> companyAddressMapper.toCompanyAddressDTO(a)).toList()
+            );
+            companyDTO.setStatusSpecials(
+                   statusSpecialMapper.StatusSpecialCompanyToStatusSpecialDTO(mapStatusSpecical.getOrDefault(companyDTO.getId(), List.of()))
             );
         }
-        return companyDTOS;
+
+        return listCompanyDTO;
     }
 
     @Override
@@ -73,25 +87,38 @@ public class CompanyServiceImp implements CompanyService {
                 pageRequestValidate.getPageSize());
 
         // Tạo search
-        Specification<Company> spec =  Specification.allOf(companySpecification.searchByName(pageRequestValidate.getKeyword())
-                        ,companySpecification.minEmployees(pageRequestValidate.getMinEmployees()),
-                        companySpecification.maxEmployees(pageRequestValidate.getMaxEmployees()),
-                        companySpecification.hasProvince(pageRequestValidate.getLocation()));
+        Specification<Company> spec = Specification.allOf(companySpecification.searchByName(pageRequestValidate.getKeyword())
+                , companySpecification.minEmployees(pageRequestValidate.getMinEmployees()),
+                companySpecification.maxEmployees(pageRequestValidate.getMaxEmployees()),
+                companySpecification.hasProvince(pageRequestValidate.getLocation()));
 
-        Page<CompanyDTO> companyDTOPage =   companyRepository.findAll(spec, pageable)
-                .map(companyMapper::companyToCompanyDTO);
+        Page<Company> companyPage = companyRepository.findAll(spec, pageable);
+        Page<CompanyDTO> companyDTOPage =  companyPage.map(companyMapper::companyToCompanyDTOForAPIPage);
+
+        List<String> listIdCompany = companyPage.stream().map(Company::getId).toList();
+        List<Company> companyForCompanySizes = companyRepository.findAllWithCompanySizeByCompanyIds(listIdCompany);
+
+        List<CompanyAddress> companyAddressList = companyAddressRepository.findByCompanyIdsWithLocation(listIdCompany);
+        List<StatusSpecialCompany> statusSpecialCompanyRepositoryList = statusSpecialCompanyRepository.findByCompanyIdsWithStatus(listIdCompany);
+
+        Map<String, List<CompanyAddress>> mapCompanyAddress = companyAddressList.stream()
+                .collect(Collectors.groupingBy((a -> a.getCompany().getId())));
+
+        Map<String, List<StatusSpecialCompany>> mapStatusSpecical = statusSpecialCompanyRepositoryList.stream()
+                .collect(Collectors.groupingBy( a-> a.getIdCompany().getId()));
 
         for (CompanyDTO companyDTO : companyDTOPage.getContent()) {
-            companyDTO.setStatusSpecials(statusSpecialMapper
-                    .StatusSpecialCompanyToStatusSpecialDTO(statusSpecialCompanyRepository
-                            .findByIdCompany_Id(companyDTO.getId())));
-            companyDTO.setCompanySize(companySizeMapper.companySizeToCompanySizeDTO(companySizeRepository
-                    .findByCompanies_Id(companyDTO
-                            .getId()).orElse(null)));
-
+            for (Company company : companyForCompanySizes) {
+                if (companyDTO.getId().equals(company.getId())) {
+                    companyDTO.setCompanySize(companySizeMapper.companySizeToCompanySizeDTO(company.getCompanySize()));
+                }
+            }
             companyDTO.setCompanyAddress(
-                    companyAddressRepository.findByCompany_Id(companyDTO.getId())
-                            .stream().map(companyAddressMapper::toCompanyAddressDTO).toList()
+                    mapCompanyAddress.getOrDefault(companyDTO.getId(), List.of()).stream().map(a -> companyAddressMapper.toCompanyAddressDTO(a)).toList()
+            );
+
+            companyDTO.setStatusSpecials(
+                    statusSpecialMapper.StatusSpecialCompanyToStatusSpecialDTO(mapStatusSpecical.getOrDefault(companyDTO.getId(), List.of()))
             );
         }
         return companyDTOPage;
@@ -102,17 +129,17 @@ public class CompanyServiceImp implements CompanyService {
         Company company = companyRepository.findById(idCompany)
                 .orElseThrow(() -> new NotFoundIdExceptionHandler("Không tìm thấy id company!"));
         CompanyDTO companyDTO = companyMapper.companyToCompanyDTO(company);
-            companyDTO.setStatusSpecials(statusSpecialMapper
-                    .StatusSpecialCompanyToStatusSpecialDTO(statusSpecialCompanyRepository
-                            .findByIdCompany_Id(companyDTO.getId())));
-            companyDTO.setCompanySize(companySizeMapper.companySizeToCompanySizeDTO(companySizeRepository
-                    .findByCompanies_Id(companyDTO
-                            .getId()).orElse(null)));
+        companyDTO.setStatusSpecials(statusSpecialMapper
+                .StatusSpecialCompanyToStatusSpecialDTO(statusSpecialCompanyRepository
+                        .findByIdCompany_Id(companyDTO.getId())));
+        companyDTO.setCompanySize(companySizeMapper.companySizeToCompanySizeDTO(companySizeRepository
+                .findByCompanies_Id(companyDTO
+                        .getId()).orElse(null)));
 
-            companyDTO.setCompanyAddress(
-                    companyAddressRepository.findByCompany_Id(companyDTO.getId())
-                            .stream().map(companyAddressMapper::toCompanyAddressDTO).toList()
-            );
+        companyDTO.setCompanyAddress(
+                companyAddressRepository.findByCompany_Id(companyDTO.getId())
+                        .stream().map(companyAddressMapper::toCompanyAddressDTO).toList()
+        );
         return companyDTO;
     }
 

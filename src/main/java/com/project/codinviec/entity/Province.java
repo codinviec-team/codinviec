@@ -22,6 +22,6 @@ public class Province {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "province", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "province", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ward> wards;
 }

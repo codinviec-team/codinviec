@@ -1,21 +1,17 @@
 package com.project.codinviec.entity.auth;
 
-import com.project.codinviec.entity.CompanyAddress;
-import com.project.codinviec.entity.CompanySize;
-import com.project.codinviec.entity.Job;
-import com.project.codinviec.entity.Review;
+import com.project.codinviec.entity.*;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
-@Entity(name = "company")
-@Data
+@Entity
+@Table(name = "company")
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -33,12 +29,16 @@ public class Company {
     @JoinColumn(name = "company_size_id")
     private CompanySize companySize;
 
-    @OneToMany(mappedBy = "company")
-    private List<Review> listReview = new ArrayList<>();
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Job> jobs = new ArrayList<>();
+    private Set<Review> listReview = new HashSet<>();
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<CompanyAddress> companyAddresses = new ArrayList<>();
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Job> jobs = new HashSet<>();
+
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    Set<CompanyAddress> companyAddresses = new HashSet<>();
+
+    @OneToMany(mappedBy = "idCompany", fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
+    Set<StatusSpecialCompany> statusSpecialCompanies = new HashSet<>();
 }

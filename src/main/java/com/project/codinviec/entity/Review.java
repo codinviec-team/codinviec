@@ -3,13 +3,11 @@ package com.project.codinviec.entity;
 import com.project.codinviec.entity.auth.Company;
 import com.project.codinviec.entity.auth.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity(name = "review")
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder

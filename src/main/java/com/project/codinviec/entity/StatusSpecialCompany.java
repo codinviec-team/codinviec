@@ -1,7 +1,7 @@
 package com.project.codinviec.entity;
 
-import com.project.codinviec.entity.key.StatusSpecialCompanyId;
 import com.project.codinviec.entity.auth.Company;
+import com.project.codinviec.entity.key.StatusSpecialCompanyId;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
@@ -9,7 +9,8 @@ import org.hibernate.annotations.OnDeleteAction;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
 @Entity
 @Table(name = "status_special_company", schema = "codinviec_db")
@@ -18,13 +19,13 @@ public class StatusSpecialCompany {
     private StatusSpecialCompanyId id;
 
     @MapsId("idCompany")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_company", nullable = false)
     private Company idCompany;
 
     @MapsId("idStatusSpecial")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "id_status_special", nullable = false)
     private StatusSpecial idStatusSpecial;
