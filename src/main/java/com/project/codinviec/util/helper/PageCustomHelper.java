@@ -48,11 +48,17 @@ public class PageCustomHelper {
 
     public PageRequestCompany validatePageCompany(PageRequestCompany pageRequestCompany) throws ParamExceptionHandler {
         // Check xem pageSize và pageNumber có phải int không
-
         int pageSize = integerHelper.parseIntOrThrow(pageRequestCompany.getPageSize(), "pageSize");
         int pageNumber = integerHelper.parseIntOrThrow(pageRequestCompany.getPageNumber(), "pageNumber");
-        int minEmployees = integerHelper.parseIntOrThrow(pageRequestCompany.getMinEmployees(), "minEmployees");
-        int maxEmployees = integerHelper.parseIntOrThrow(pageRequestCompany.getMaxEmployees(), "maxEmployees");
+
+        int minEmployees = 0;
+        if (pageRequestCompany.getMinEmployees() != null ){
+             minEmployees = integerHelper.parseIntOrThrow(pageRequestCompany.getMinEmployees(), "minEmployees");
+        }
+        int maxEmployees = 100;
+        if (pageRequestCompany.getMaxEmployees() != null ){
+            maxEmployees = integerHelper.parseIntOrThrow(pageRequestCompany.getMaxEmployees(), "maxEmployees");
+        }
 
         if (maxEmployees == 0) {
             pageRequestCompany.setMaxEmployees(Integer.MAX_VALUE);
