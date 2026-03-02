@@ -2,16 +2,15 @@ package com.project.codinviec.entity;
 
 import com.project.codinviec.entity.auth.Company;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity(name = "company_size")
-@Data
+@Entity
+@Table(name = "company_size")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

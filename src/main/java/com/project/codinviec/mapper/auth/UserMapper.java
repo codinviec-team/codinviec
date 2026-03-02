@@ -19,9 +19,12 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class UserMapper {
     private final PasswordEncoder passwordEncoder;
+    private final RoleMapper roleMapper;
+    private final CompanyMapper companyMapper;
+
 
     public UserDTO userToUserDTO(User user) {
-        return UserDTO.builder()
+         UserDTO dto =  UserDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
@@ -40,10 +43,17 @@ public class UserMapper {
                 .createdDate(user.getCreatedDate())
                 .updatedDate(user.getUpdatedDate())
                 .build();
+        if (user.getRole() != null) {
+            dto.setRole(roleMapper.toRoleDTO(user.getRole()));
+        }
+        if (user.getCompany() != null) {
+            dto.setCompany(companyMapper.companyToCompanyUserDTO(user.getCompany()));
+        }
+        return dto;
     }
 
     public ProfileDTO userToProfileDTO(User user) {
-        return ProfileDTO.builder()
+        ProfileDTO dto =  ProfileDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
@@ -57,10 +67,18 @@ public class UserMapper {
                 .birthDate(user.getBirthDate())
                 .isFindJob(user.getIsFindJob())
                 .groupSoftSkill(user.getGroupSoftSkill())
+                .isBlock(user.getIsBlock())
                 .cv(user.getCv())
                 .createdDate(user.getCreatedDate())
                 .updatedDate(user.getUpdatedDate())
                 .build();
+        if (user.getRole() != null) {
+            dto.setRole(roleMapper.toRoleDTO(user.getRole()));
+        }
+        if (user.getCompany() != null) {
+            dto.setCompany(companyMapper.companyToCompanyUserDTO(user.getCompany()));
+        }
+        return dto;
     }
 
     public User saveUserMapper(Role role, Company company, SaveUserRequest saveUserRequest, String passwword){
@@ -111,7 +129,7 @@ public class UserMapper {
                 .build();
     }
 
-    public void updateProfileMapper(User existingUser, UpdateProfileRequest request) {
+    public User updateProfileMapper(User existingUser, UpdateProfileRequest request) {
         existingUser.setFirstName(request.getFirstName());
         existingUser.setLastName(request.getLastName());
         existingUser.setPhone(request.getPhone());
@@ -120,5 +138,6 @@ public class UserMapper {
         existingUser.setAddress(request.getAddress());
         existingUser.setWebsiteLink(request.getWebsiteLink());
         existingUser.setBirthDate(request.getBirthDate());
+        return existingUser;
     }
 }
