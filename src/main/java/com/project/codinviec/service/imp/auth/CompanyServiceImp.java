@@ -1,11 +1,8 @@
 package com.project.codinviec.service.imp.auth;
 
-import com.project.codinviec.dto.CompanyAddressDTO;
-import com.project.codinviec.dto.StatusSpecialDTO;
 import com.project.codinviec.dto.auth.CompanyDTO;
 import com.project.codinviec.entity.CompanyAddress;
 import com.project.codinviec.entity.CompanySize;
-import com.project.codinviec.entity.StatusSpecial;
 import com.project.codinviec.entity.StatusSpecialCompany;
 import com.project.codinviec.entity.auth.Company;
 import com.project.codinviec.exception.common.NotFoundIdExceptionHandler;
@@ -30,7 +27,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -93,11 +89,13 @@ public class CompanyServiceImp implements CompanyService {
                 companySpecification.hasProvince(pageRequestValidate.getLocation()));
 
         Page<Company> companyPage = companyRepository.findAll(spec, pageable);
+        Map<String, Company> companyPageMap =
+                companyPage.getContent().stream()
+                        .collect(Collectors.toMap(Company::getId, c -> c));
+
         Page<CompanyDTO> companyDTOPage =  companyPage.map(companyMapper::companyToCompanyDTOForAPIPage);
 
         List<String> listIdCompany = companyPage.stream().map(Company::getId).toList();
-        List<Company> companyForCompanySizes = companyRepository.findAllWithCompanySizeByCompanyIds(listIdCompany);
-
         List<CompanyAddress> companyAddressList = companyAddressRepository.findByCompanyIdsWithLocation(listIdCompany);
         List<StatusSpecialCompany> statusSpecialCompanyRepositoryList = statusSpecialCompanyRepository.findByCompanyIdsWithStatus(listIdCompany);
 
@@ -108,11 +106,10 @@ public class CompanyServiceImp implements CompanyService {
                 .collect(Collectors.groupingBy( a-> a.getIdCompany().getId()));
 
         for (CompanyDTO companyDTO : companyDTOPage.getContent()) {
-            for (Company company : companyForCompanySizes) {
-                if (companyDTO.getId().equals(company.getId())) {
-                    companyDTO.setCompanySize(companySizeMapper.companySizeToCompanySizeDTO(company.getCompanySize()));
-                }
-            }
+            Company companyCurrent = companyPageMap.get(companyDTO.getId());
+            companyDTO.setCompanySize(
+                    companySizeMapper.companySizeToCompanySizeDTO(companyCurrent.getCompanySize())
+            );
             companyDTO.setCompanyAddress(
                     mapCompanyAddress.getOrDefault(companyDTO.getId(), List.of()).stream().map(a -> companyAddressMapper.toCompanyAddressDTO(a)).toList()
             );

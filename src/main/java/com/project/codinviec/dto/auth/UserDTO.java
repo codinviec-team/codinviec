@@ -25,7 +25,7 @@ public class UserDTO {
     private LocalDateTime birthDate;
     private boolean isFindJob;
     private String groupSoftSkill;
-    private CompanyDTO company;
+    private CompanyUserDTO company;
     private RoleDTO role;
     private boolean isBlock;
     private String cv;

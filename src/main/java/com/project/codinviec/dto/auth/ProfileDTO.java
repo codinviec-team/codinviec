@@ -25,11 +25,12 @@ public class ProfileDTO {
     private LocalDateTime birthDate;
     private boolean isFindJob;
     private String groupSoftSkill;
-    private CompanyDTO company;
+    private CompanyUserDTO company;
     private RoleDTO role;
-    private String cv;
     private boolean isBlock;
+    private String cv;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
+
 
 }

@@ -43,10 +43,7 @@ import java.time.LocalDateTime;
 public class AuthServiceImp implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final CompanyMapper companyMapper;
-
     private final BlockUserHelper blockUserHelper;
-
     @Qualifier("redisTemplateDb0")
     private final RedisTemplate<String, String> redisTemplateDb00;
     private final ObjectMapper objectMapper;
@@ -152,6 +149,8 @@ public class AuthServiceImp implements AuthService {
 
         User user = registerMapper.saveRegister(registerRequest, defaultRole);
         User savedUser = userRepository.save(user);
+
+//        Khúc này về sau tách server ra làm nè
         if (!savedUser.getId().isBlank() && !savedUser.getId().isEmpty() && savedUser.getId() != null) {
             kafkaHelper.sendKafkaEmailRegister("register_email",
                     InforEmailDTO.builder()
@@ -160,7 +159,6 @@ public class AuthServiceImp implements AuthService {
                             .dateCreated(timeHelper.parseLocalDateTimeToSimpleTime(savedUser.getCreatedDate()))
                             .build());
         }
-
         return registerMapper.toRegisterDTO(savedUser);
     }
 
@@ -264,12 +262,6 @@ public class AuthServiceImp implements AuthService {
                 .orElseThrow(() -> new NotFoundIdExceptionHandler("Không tìm thấy user với id: " + userId));
 
         ProfileDTO updatedUser = userMapper.userToProfileDTO(user);
-        if (user.getCompany() != null){
-            updatedUser.setCompany(companyMapper.companyToCompanyDTO(user.getCompany()));
-        }
-        if (user.getRole() != null){
-            updatedUser.setRole(roleMapper.toRoleDTO(user.getRole()));
-        }
         return updatedUser;
     }
 
@@ -287,12 +279,11 @@ public class AuthServiceImp implements AuthService {
 
 
         // Cập nhật thông tin profile (không cho phép thay đổi email)
-        userMapper.updateProfileMapper(user, request);
+        User userUpdate = userMapper.updateProfileMapper(user, request);
 
         // Lưu user đã cập nhật
-        User updatedUser = userRepository.save(user);
+        User updatedUser = userRepository.save(userUpdate);
         UserDTO userDTO = userMapper.userToUserDTO(updatedUser);
-        userDTO.setRole(roleMapper.toRoleDTO(updatedUser.getRole()));
         return userDTO;
     }
 
@@ -304,7 +295,6 @@ public class AuthServiceImp implements AuthService {
         user.setIsFindJob(!user.getIsFindJob());
         User updatedUser = userRepository.save(user);
         UserDTO userDTO = userMapper.userToUserDTO(updatedUser);
-        userDTO.setRole(roleMapper.toRoleDTO(updatedUser.getRole()));
         return userDTO;
     }
 
@@ -315,7 +305,6 @@ public class AuthServiceImp implements AuthService {
         user.setGroupSoftSkill(changeSoftSkillRequest.getSoftSkill());
         User updatedUser = userRepository.save(user);
         UserDTO userDTO = userMapper.userToUserDTO(updatedUser);
-        userDTO.setRole(roleMapper.toRoleDTO(updatedUser.getRole()));
         return userDTO;
     }
 
@@ -341,7 +330,6 @@ public class AuthServiceImp implements AuthService {
         user.setAvatar(linkBe + "/" + nameAvatarFile);
         User updatedUser = userRepository.save(user);
         UserDTO userDTO = userMapper.userToUserDTO(updatedUser);
-        userDTO.setRole(roleMapper.toRoleDTO(updatedUser.getRole()));
         return userDTO;
     }
 
@@ -369,13 +357,6 @@ public class AuthServiceImp implements AuthService {
         user.setCv(linkBe + "/" + nameFile);
         User updatedUser = userRepository.save(user);
         UserDTO userDTO = userMapper.userToUserDTO(updatedUser);
-        if (user.getCompany() != null){
-            userDTO.setCompany(companyMapper.companyToCompanyDTO(user.getCompany()));
-        }
-        if (user.getRole() != null){
-            userDTO.setRole(roleMapper.toRoleDTO(user.getRole()));
-        }
         return userDTO;
-
     }
 }

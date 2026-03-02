@@ -4,18 +4,17 @@ import com.project.codinviec.entity.Review;
 import com.project.codinviec.entity.WishlistCandidate;
 import com.project.codinviec.entity.WishlistJob;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity(name = "user")
-@Data
+@Entity
+@Table(name = "user")
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -33,7 +32,6 @@ public class User {
     private String gender;
     private String education;
     private String address;
-    @Column(name = "website_link")
     private String websiteLink;
     private LocalDateTime birthDate;
     private Boolean  isFindJob;
