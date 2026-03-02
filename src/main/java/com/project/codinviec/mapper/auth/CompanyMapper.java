@@ -4,7 +4,6 @@ import com.project.codinviec.dto.CompanyAddressDTO;
 import com.project.codinviec.dto.CompanySizeDTO;
 import com.project.codinviec.dto.StatusSpecialDTO;
 import com.project.codinviec.dto.auth.CompanyDTO;
-import com.project.codinviec.dto.auth.CompanyUserDTO;
 import com.project.codinviec.entity.CompanySize;
 import com.project.codinviec.entity.auth.Company;
 import com.project.codinviec.mapper.ProvinceMapper;
@@ -43,20 +42,6 @@ public class CompanyMapper {
             dto.setCompanySize(sizeDTO);
         }
        return dto;
-    }
-
-
-    public CompanyUserDTO companyToCompanyUserDTO(Company company){
-        CompanyUserDTO dto = CompanyUserDTO.builder()
-                .id(company.getId())
-                .name(company.getName())
-                .description(company.getDescription())
-                .website(company.getWebsite())
-                .logo(company.getLogo())
-                .createdDate(company.getCreatedDate())
-                .updatedDate(company.getUpdatedDate())
-                .build();
-        return dto;
     }
 
 
