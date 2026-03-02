@@ -45,6 +45,19 @@ public class CompanyMapper {
        return dto;
     }
 
+    public CompanyUserDTO companyToCompanyUserDTO(Company company){
+        CompanyUserDTO dto = CompanyUserDTO.builder()
+                .id(company.getId())
+                .name(company.getName())
+                .description(company.getDescription())
+                .website(company.getWebsite())
+                .logo(company.getLogo())
+                .createdDate(company.getCreatedDate())
+                .updatedDate(company.getUpdatedDate())
+                .build();
+        return dto;
+    }
+
 
     public CompanyUserDTO companyToCompanyUserDTO(Company company){
         CompanyUserDTO dto = CompanyUserDTO.builder()
