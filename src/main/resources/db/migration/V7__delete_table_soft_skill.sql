@@ -1,1 +1,0 @@
-DROP TABLE soft_skills_name;

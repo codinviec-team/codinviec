@@ -1,0 +1,67 @@
+spring:
+  dotenv:
+    enabled: true
+  application:
+    name: auth-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+  jpa:
+    hibernate:
+      ddl-auto: none
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOSTRAP_SERVER}
+    consumer:
+      group-id: email-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      ack-mode: manual
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${SPRING_SECURITY_GOOGLE_CLIENT_ID}
+            client-secret: ${SPRING_SECURITY_GOOGLE_CLIENT_SECRET}
+            redirect-uri: ${SPRING_SECURITY_GOOGLE_REDIRECT_URI}
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://www.googleapis.com/oauth2/v4/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+
+server:
+  port: ${SERVER_PORT}
+
+client:
+  url: ${CLIENT_URL}
+
+google:
+  client-id: ${SPRING_SECURITY_GOOGLE_CLIENT_ID}
+  redirect-uri: ${SPRING_SECURITY_GOOGLE_REDIRECT_URI}
+  client-secret: ${SPRING_SECURITY_GOOGLE_CLIENT_SECRET}
+
+redis:
+  host: ${REDIS_HOST}
+  password: ${REDIS_PASSWORD}
+  port: ${REDIS_PORT}
+
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration:
+    access: ${JWT_ACCESS_EXPIRED} #15m
+    refresh: ${JWT_REFRESH_EXPIRED} #7d
