@@ -1,5 +1,6 @@
 package com.codinviec.auth_service;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -11,7 +12,18 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 public class AuthServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(AuthServiceApplication.class, args);
+
+        Dotenv dotenv = Dotenv.configure()
+                .directory("auth-service")
+                .ignoreIfMissing()
+                .load();
+
+        dotenv.entries().forEach(entry -> {
+            if (System.getProperty(entry.getKey()) == null) {
+                System.setProperty(entry.getKey(), entry.getValue());
+            }
+        });
+        SpringApplication.run(AuthServiceApplication.class, args);
 	}
 
 }

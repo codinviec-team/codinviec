@@ -1,11 +1,11 @@
 package com.project.codinviec.util.helper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.codinviec.model.UserBlock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
