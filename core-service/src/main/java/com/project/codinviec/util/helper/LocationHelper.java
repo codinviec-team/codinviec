@@ -1,7 +1,6 @@
 package com.project.codinviec.util.helper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.codinviec.dto.ProvinceDTO;
 import com.project.codinviec.dto.WardDTO;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -42,10 +42,7 @@ public class LocationHelper {
             if(json == null){
                 return new ArrayList<>();
             }
-            List<ProvinceDTO> provinces = objectMapper.readValue(
-                    json,
-                    new TypeReference<List<ProvinceDTO>>() {}
-            );
+            List<ProvinceDTO> provinces = objectMapper.readValue(json,objectMapper.getTypeFactory().constructCollectionType(List.class, ProvinceDTO.class));
             return provinces;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -67,10 +64,7 @@ public class LocationHelper {
             if(json == null){
                 return new ArrayList<>();
             }
-            List<WardDTO> wards = objectMapper.readValue(
-                    json,
-                    new TypeReference<List<WardDTO>>() {}
-            );
+            List<WardDTO> wards = objectMapper.readValue(json, objectMapper.getTypeFactory().constructCollectionType(List.class, WardDTO.class));
             return wards;
         } catch (Exception e) {
             throw new RuntimeException(e);

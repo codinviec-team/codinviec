@@ -1,11 +1,11 @@
 package com.project.codinviec.util.helper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.codinviec.dto.InforEmailDTO;
 import com.project.codinviec.dto.InforEmailSecurityDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor

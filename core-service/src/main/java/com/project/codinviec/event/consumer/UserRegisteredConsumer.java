@@ -1,7 +1,6 @@
 package com.project.codinviec.event.consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.codinviec.event.payload.CreateUserCorePayload;
 import com.project.codinviec.event.publish.UserEventPublish;
 import com.project.codinviec.exception.auth.CreatedUserFail;
@@ -10,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class UserRegisteredConsumer {
         CreateUserCorePayload payload;
         try {
             payload = objectMapper.readValue(message, CreateUserCorePayload.class);
-        } catch (JsonProcessingException e) {
+        } catch (RuntimeException e) {
             ack.acknowledge();
             return;
         }

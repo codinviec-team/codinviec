@@ -1,13 +1,13 @@
 package com.project.codinviec.event.publish;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.codinviec.entity.auth.OutboxEventEntity;
 import com.project.codinviec.event.payload.CreateUserCorePayload;
 import com.project.codinviec.exception.auth.CreatedUserFail;
 import com.project.codinviec.service.OutboxServices;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 
@@ -28,7 +28,7 @@ public class UserEventPublish {
                     .createdDate(LocalDateTime.now())
                     .build());
             outboxPublisher.markHasPendingEvents();
-        } catch (RuntimeException | JsonProcessingException e) {
+        } catch (RuntimeException  e) {
             throw new CreatedUserFail();
         }
     }
@@ -43,7 +43,7 @@ public class UserEventPublish {
                     .createdDate(LocalDateTime.now())
                     .build());
             outboxPublisher.markHasPendingEvents();
-        } catch (RuntimeException | JsonProcessingException e) {
+        } catch (RuntimeException  e) {
             throw new CreatedUserFail();
         }
     }
