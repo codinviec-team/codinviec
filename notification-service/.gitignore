@@ -1,0 +1,34 @@
+### Maven / Gradle ###
+target/
+build/
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### IDE ###
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.settings/
+.classpath
+.project
+.springBeans
+.sts4-cache
+
+### OS ###
+.DS_Store
+
+### Env / Secrets ###
+.env
+*.env
+
+### Logs ###
+logs/
+*.log
+
+### Local tools ###
+.fastRequest
+temp-backup/

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Mã xác thực OTP</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f6f8; font-family:Arial, sans-serif;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:20px;">
+    <tr>
+        <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0"
+                   style="background:#ffffff; border-radius:8px; padding:30px;">
+                <tr>
+                    <td align="center">
+                        <h2 style="margin-bottom:10px;">🔐 Xác thực OTP</h2>
+                        <p style="color:#555; font-size:15px;">
+                            Mã xác thực của bạn là:
+                        </p>
+                        <!-- OTP -->
+                        <div style="
+                            margin:20px 0;
+                            font-size:32px;
+                            font-weight:bold;
+                            letter-spacing:10px;
+                            color:#1976d2;">
+                            <span th:text="${otp}">1234</span>
+                        </div>
+
+                        <p style="color:#555; font-size:14px;">
+                            Mã OTP có hiệu lực trong
+                            <strong>10</strong> phút.
+                        </p>
+
+                        <p style="color:#999; font-size:13px; margin-top:25px;">
+                            Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email.
+                        </p>
+
+                        <hr style="margin:30px 0; border:none; border-top:1px solid #eee;">
+
+                        <p style="color:#aaa; font-size:12px;">
+                            © 2026 Codinviec System
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
