@@ -1,0 +1,27 @@
+### ENV ###
+.env
+**/.env
+
+### Logs ###
+logs/
+**/logs/
+*.log
+
+### IntelliJ / IDE ###
+.idea/
+*.iml
+*.iws
+*.ipr
+
+### Fast Request plugin ###
+.fastRequest/
+
+### Build ###
+target/
+build/
+**/target/
+**/build/
+
+### OS ###
+.DS_Store
+Thumbs.db
