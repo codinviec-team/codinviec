@@ -61,15 +61,3 @@ vnpay:
   pay-url: ${VNP_URL}
   return-url: ${VNP_RETURN_URL}
   ipn-url: ${VNP_IPN_URL}
-
-logging:
-  level:
-    root: INFO
-    com.project.it_job: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-  file:
-    name: logs/it_job.log
-  pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
