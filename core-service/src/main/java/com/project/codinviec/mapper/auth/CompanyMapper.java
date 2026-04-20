@@ -2,6 +2,7 @@ package com.project.codinviec.mapper.auth;
 
 import com.project.codinviec.dto.CompanyAddressDTO;
 import com.project.codinviec.dto.CompanySizeDTO;
+import com.project.codinviec.dto.IndustryDTO;
 import com.project.codinviec.dto.StatusSpecialDTO;
 import com.project.codinviec.dto.auth.CompanyDTO;
 import com.project.codinviec.dto.auth.CompanyUserDTO;
@@ -30,6 +31,7 @@ public class CompanyMapper {
                 .description(company.getDescription())
                 .website(company.getWebsite())
                 .logo(company.getLogo())
+                .isFeatured(company.isFeatured())
                 .createdDate(company.getCreatedDate())
                 .updatedDate(company.getUpdatedDate())
                 .build();
@@ -42,6 +44,14 @@ public class CompanyMapper {
                     .build();
             dto.setCompanySize(sizeDTO);
         }
+//        industry
+        if (company.getIndustry() != null){
+            IndustryDTO industryDTO = IndustryDTO.builder()
+                    .id(company.getIndustry().getId())
+                    .name(company.getIndustry().getName())
+                    .build();
+            dto.setIndustry(industryDTO);
+        }
        return dto;
     }
 
@@ -52,22 +62,11 @@ public class CompanyMapper {
                 .description(company.getDescription())
                 .website(company.getWebsite())
                 .logo(company.getLogo())
+                .isFeatured(company.isFeatured())
                 .createdDate(company.getCreatedDate())
                 .updatedDate(company.getUpdatedDate())
                 .build();
         return dto;
-    }
-
-    public CompanyDTO companyToCompanyDTOForAPIPage(Company company){
-        return CompanyDTO.builder()
-                .id(company.getId())
-                .name(company.getName())
-                .description(company.getDescription())
-                .website(company.getWebsite())
-                .logo(company.getLogo())
-                .createdDate(company.getCreatedDate())
-                .updatedDate(company.getUpdatedDate())
-                .build();
     }
 
     public Company saveCompanyMapper( CompanySize companySize,SaveUpdateCompanyRequest saveUpdateCompanyRequest){
@@ -79,6 +78,7 @@ public class CompanyMapper {
                 .logo(saveUpdateCompanyRequest.getLogo())
                 .website(saveUpdateCompanyRequest.getWebsite())
                 .companySize(companySize)
+                .isFeatured(saveUpdateCompanyRequest.getIsFeatured())
                 .createdDate(LocalDateTime.now())
                 .updatedDate(LocalDateTime.now())
                 .build();
@@ -91,6 +91,7 @@ public class CompanyMapper {
                 .description(saveUpdateCompanyRequest.getDescription())
                 .logo(saveUpdateCompanyRequest.getLogo())
                 .website(saveUpdateCompanyRequest.getWebsite())
+                .isFeatured(saveUpdateCompanyRequest.getIsFeatured())
                 .companySize(companySize)
                 .updatedDate(LocalDateTime.now())
                 .build();

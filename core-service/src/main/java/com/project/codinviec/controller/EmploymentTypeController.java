@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/employment-type")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class EmploymentTypeController {
     private final EmploymentTypeService employmentTypeService;

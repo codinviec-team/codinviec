@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/province")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class ProvinceController {
 

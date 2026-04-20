@@ -3,7 +3,8 @@ package com.codinviec.gatewayapi.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
@@ -26,13 +27,36 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-//                .authorizeExchange(exchange -> exchange
-//                        .pathMatchers("/api/auth/**").permitAll()
-//                        .pathMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-//                )
-                .authorizeExchange(ex -> ex.anyExchange().permitAll())
+                .authorizeExchange(exchange -> exchange
+//                        Authentication
+                                .pathMatchers(
+                                        "/api/auth/**",
+                                        "/oauth2/**",
+                                        "/login/oauth2/**"
+                                ).permitAll()
+
+////                        PERMIT PATH
+//                                .pathMatchers(HttpMethod.GET,
+//                                        "/api/category/**",
+//                                        "/api/province/**",
+//                                        "/api/company/**",
+//                                        "/api/company-size/**",
+//                                        "/api/job/**"
+//                                        ).permitAll()
+//
+////                        any path
+//                                .anyExchange().authenticated()
+                                .anyExchange().permitAll()
+                )
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
+                // chặn popup browser
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((exchange, ex2) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                            return exchange.getResponse().setComplete();
+                        })
+                )
                 .build();
     }
 
@@ -41,7 +65,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(
-                List.of("http://localhost:3000", "https://codinviec-fe-ten.vercel.app")
+                List.of("http://localhost:3000")
         );
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

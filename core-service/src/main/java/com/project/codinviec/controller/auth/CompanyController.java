@@ -1,5 +1,6 @@
 package com.project.codinviec.controller.auth;
 
+import com.project.codinviec.request.GetCompanyFeaturedRequest;
 import com.project.codinviec.request.PageRequestCompany;
 import com.project.codinviec.request.auth.SaveUpdateCompanyRequest;
 import com.project.codinviec.response.BaseResponse;
@@ -27,6 +28,11 @@ public class CompanyController {
     @GetMapping("/{idCompany}")
     public ResponseEntity<?> getCompanyById(@PathVariable String idCompany){
         return ResponseEntity.ok(BaseResponse.success(companyService.getCompanyById(idCompany),"OK"));
+    }
+
+    @GetMapping("/featured")
+    public ResponseEntity<?> getCompanyFeatured(GetCompanyFeaturedRequest getCompanyFeaturedRequest){
+        return ResponseEntity.ok(BaseResponse.success(companyService.getCompanyFeatured(getCompanyFeaturedRequest),"OK"));
     }
 
     @PostMapping

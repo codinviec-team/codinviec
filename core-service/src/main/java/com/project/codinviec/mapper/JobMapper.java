@@ -38,6 +38,7 @@ public class JobMapper {
                 .jobStatusName(entity.getJobStatus() != null ? entity.getJobStatus().getName() : null )
                 .responsibility(entity.getResponsibility())
                 .isAgreedSalary(entity.getIsAgreedSalary())
+                .isFeatured(entity.getIsFeatured())
                 .createdDate(entity.getCreatedDate())
                 .updatedDate(entity.getUpdatedDate())
                 .build();
