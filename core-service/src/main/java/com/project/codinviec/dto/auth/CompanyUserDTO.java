@@ -17,6 +17,7 @@ public class CompanyUserDTO {
     private String description;
     private String website;
     private String logo;
+    private Boolean isFeatured;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
 }

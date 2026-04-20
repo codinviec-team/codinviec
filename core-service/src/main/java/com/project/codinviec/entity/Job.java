@@ -8,6 +8,28 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@NamedEntityGraph(
+        name = "Job.withAssociations",
+        attributeNodes = {
+                @NamedAttributeNode("province"),
+                @NamedAttributeNode("industry"),
+                @NamedAttributeNode("jobLevel"),
+                @NamedAttributeNode("degreeLevel"),
+                @NamedAttributeNode("employmentType"),
+                @NamedAttributeNode("experience"),
+                @NamedAttributeNode("jobStatus"),
+                @NamedAttributeNode(value = "company", subgraph = "company-subgraph")
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "company-subgraph",
+                        attributeNodes = {
+                                @NamedAttributeNode("companySize"),
+                                @NamedAttributeNode("industry")
+                        }
+                )
+        }
+)
 @Entity(name = "job")
 @Getter
 @Setter
@@ -24,7 +46,7 @@ public class Job {
 
     @ManyToOne
     @JoinColumn(name = "company_id")
-    private  Company company;
+    private Company company;
 
     @Column(name = "detail_address", columnDefinition = "TEXT")
     private String detailAddress;
@@ -40,6 +62,9 @@ public class Job {
 
     @Column(name = "is_agreed_salary")
     private Boolean isAgreedSalary;
+
+    @Column(name = "is_featured")
+    private Boolean isFeatured;
 
     @Column(name = "salary")
     private double salary;
@@ -77,12 +102,11 @@ public class Job {
     @JoinColumn(name = "employment_type_id")
     private EmploymentType employmentType;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "experience_id")
     private Experience experience;
 
-    @OneToMany(mappedBy = "job",cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WishlistJob> listWishlistJob = new ArrayList<>();
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -90,5 +114,4 @@ public class Job {
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AvailableSkillsJob> listAvailableSkillsJob = new ArrayList<>();
-
 }

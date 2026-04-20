@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/report-status")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class ReportStatusController {
     private final ReportStatusService reportStatusService;

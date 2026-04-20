@@ -22,15 +22,19 @@ public class Company {
     private String description;
     private String website;
     private String logo;
+    private boolean isFeatured;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_size_id")
     private CompanySize companySize;
 
-    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "industry_id")
+    private Industry industry;
 
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Review> listReview = new HashSet<>();
 
     @OneToMany(mappedBy = "company", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)

@@ -16,15 +16,27 @@ import java.util.List;
 
 @Repository
 public interface CompanyRepository extends JpaRepository<Company,String>, JpaSpecificationExecutor<Company> {
-    @Query("""
-    select c
-    from Company c
-    join fetch c.companySize
-""")
-    List<Company> findAllWithCompanySize();
+    @EntityGraph(
+            type =  EntityGraph.EntityGraphType.FETCH,
+            attributePaths = {
+                    "companySize",
+                    "industry"
+            })
+    List<Company> findAll(Specification<Company> spec);
 
-    @EntityGraph(attributePaths = {
-            "companySize"
+    @EntityGraph(
+            type =  EntityGraph.EntityGraphType.FETCH,
+            attributePaths = {
+                    "companySize",
+                    "industry"
+            })
+    List<Company> findByIsFeaturedTrue(Pageable pageable);
+
+    @EntityGraph(
+            type =  EntityGraph.EntityGraphType.FETCH,
+            attributePaths = {
+            "companySize",
+            "industry"
     })
     Page<Company> findAll(Specification<Company> spec,Pageable pageable);
 }

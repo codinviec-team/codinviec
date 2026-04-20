@@ -37,7 +37,7 @@ public class CompanySpecification {
             }
 
             Join<Company, CompanySize> sizeJoin =
-                    root.join("companySize", JoinType.LEFT); // ⚠ LEFT JOIN
+                    root.join("companySize", JoinType.INNER);
 
             return cb.greaterThanOrEqualTo(
                     sizeJoin.get("maxEmployees"),
@@ -57,7 +57,7 @@ public class CompanySpecification {
             }
 
             Join<Company, CompanySize> sizeJoin =
-                    root.join("companySize", JoinType.LEFT); // ⚠ LEFT JOIN
+                    root.join("companySize", JoinType.INNER);
 
             return cb.lessThanOrEqualTo(
                     sizeJoin.get("minEmployees"),
@@ -78,7 +78,7 @@ public class CompanySpecification {
             query.distinct(true); // tránh duplicate do OneToMany
 
             Join<Company, CompanyAddress> addressJoin =
-                    root.join("companyAddresses", JoinType.LEFT); // ⚠ LEFT JOIN
+                    root.join("companyAddresses", JoinType.INNER);
 
             return cb.like(
                     cb.lower(addressJoin.get("province").get("name")),
@@ -97,7 +97,7 @@ public class CompanySpecification {
             }
 
             Join<Company, CompanyAddress> addressJoin =
-                    root.join("companyAddresses", JoinType.LEFT); // ⚠ LEFT JOIN
+                    root.join("companyAddresses", JoinType.INNER);
 
             return cb.equal(addressJoin.get("headOffice"), headOffice);
         };

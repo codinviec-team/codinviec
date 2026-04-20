@@ -2,6 +2,7 @@ package com.project.codinviec.service;
 
 import com.project.codinviec.dto.JobDTO;
 import com.project.codinviec.request.ApplyJobRequest;
+import com.project.codinviec.request.GetJobFeaturedRequest;
 import com.project.codinviec.request.JobFilterRequest;
 import com.project.codinviec.request.JobRequest;
 import com.project.codinviec.request.PageRequestCustom;
@@ -16,6 +17,8 @@ public interface JobService {
 
     JobDTO getJobById(int id);
     List<JobDTO> getJobByIdCompany(String companyId);
+
+    List<JobDTO> getFeaturedJobs(GetJobFeaturedRequest request);
 
     JobDTO createJob(JobRequest request);
     JobDTO updateJob(int id, JobRequest request);

@@ -18,6 +18,7 @@ import com.project.codinviec.repository.StatusSpecialJobRepository;
 import com.project.codinviec.repository.auth.CompanyRepository;
 import com.project.codinviec.repository.auth.UserRepository;
 import com.project.codinviec.request.ApplyJobRequest;
+import com.project.codinviec.request.GetJobFeaturedRequest;
 import com.project.codinviec.request.JobFilterRequest;
 import com.project.codinviec.request.JobRequest;
 import com.project.codinviec.request.PageRequestCustom;
@@ -34,6 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -55,20 +58,9 @@ public class JobServiceImp implements JobService {
 
     @Override
     public List<JobDTO> getAllJob() {
-        List<JobDTO> jobDTOList = jobRepository.findAll().stream()
-                .map(jobMapper::toDTO)
-                .toList();
-
-        for (JobDTO jobDTO : jobDTOList) {
-            jobDTO.setStatusSpecials(statusSpecialMapper
-                    .StatusSpecialJobToStatusSpecialDTO(statusSpecialJobRepository
-                            .findByJob_Id(jobDTO.getId())));
-            jobDTO.setSkills(availableSkillMapper
-                    .AvailbleSkillJobToAvaibleSkill(
-                            availableSkillsJobRepository.findByJob_Id(jobDTO.getId())));
-
-        }
-
+        List<Job> jobs = jobRepository.findAll();
+        List<JobDTO> jobDTOList = jobs.stream().map(jobMapper::toDTO).toList();
+        enrichJobDTOs(jobDTOList);
         return jobDTOList;
     }
 
@@ -106,17 +98,10 @@ public class JobServiceImp implements JobService {
 
         Specification<Job> spec = Specification.allOf(jobSpecification.searchByName(pageRequestValidate.getKeyword()));
 
-        return jobRepository.findAll(spec, pageable)
-                .map((job) -> {
-                    JobDTO jobDTO = jobMapper.toDTO(job);
-                    jobDTO.setStatusSpecials(statusSpecialMapper
-                            .StatusSpecialJobToStatusSpecialDTO(statusSpecialJobRepository
-                                    .findByJob_Id(jobDTO.getId())));
-                    jobDTO.setSkills(availableSkillMapper
-                            .AvailbleSkillJobToAvaibleSkill(
-                                    availableSkillsJobRepository.findByJob_Id(jobDTO.getId())));
-                    return jobDTO;
-                });
+        Page<Job> jobPage = jobRepository.findAll(spec, pageable);
+        List<JobDTO> jobDTOs = jobPage.getContent().stream().map(jobMapper::toDTO).toList();
+        enrichJobDTOs(jobDTOs);
+        return new org.springframework.data.domain.PageImpl<>(jobDTOs, pageable, jobPage.getTotalElements());
     }
 
     @Override
@@ -136,47 +121,28 @@ public class JobServiceImp implements JobService {
                 jobFilterRequest.getSalaryMax()
         ), jobSpecification.searchByName(jobFilterRequest.getKeyword().trim())
                 ,jobSpecification.searchCompanyName(jobFilterRequest.getKeyword().trim()));
-        return jobRepository.findAll(spec, pageable)
-                .map((job) -> {
-                    JobDTO jobDTO = jobMapper.toDTO(job);
-                    jobDTO.setStatusSpecials(statusSpecialMapper
-                            .StatusSpecialJobToStatusSpecialDTO(statusSpecialJobRepository
-                                    .findByJob_Id(jobDTO.getId())));
-                    jobDTO.setSkills(availableSkillMapper
-                            .AvailbleSkillJobToAvaibleSkill(
-                                    availableSkillsJobRepository.findByJob_Id(jobDTO.getId())));
-                    return jobDTO;
-                });
+        Page<Job> jobPage = jobRepository.findAll(spec, pageable);
+        List<JobDTO> jobDTOs = jobPage.getContent().stream().map(jobMapper::toDTO).toList();
+        enrichJobDTOs(jobDTOs);
+        return new org.springframework.data.domain.PageImpl<>(jobDTOs, pageable, jobPage.getTotalElements());
     }
 
     @Override
     public JobDTO getJobById(int id) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new NotFoundIdExceptionHandler("Không tìm thấy Job ID: " + id));
-        JobDTO jobDTO = jobMapper.toDTO(job);
-        jobDTO.setStatusSpecials(statusSpecialMapper
-                .StatusSpecialJobToStatusSpecialDTO(statusSpecialJobRepository
-                        .findByJob_Id(job.getId())));
-        jobDTO.setSkills(availableSkillMapper
-                .AvailbleSkillJobToAvaibleSkill(
-                        availableSkillsJobRepository.findByJob_Id(job.getId())));
-        return jobDTO;
+        List<JobDTO> list = List.of(jobMapper.toDTO(job));
+        enrichJobDTOs(list);
+        return list.get(0);
     }
 
     @Override
     public List<JobDTO> getJobByIdCompany(String companyId) {
-        Company company = companyRepository.findById(companyId)
+        companyRepository.findById(companyId)
                 .orElseThrow(() -> new NotFoundIdExceptionHandler("Không tìm thấy company"));
         List<JobDTO> jobDTOList = jobRepository.getJobByCompany_Id(companyId)
-                .stream().map((j) -> jobMapper.toDTO(j)).toList();
-        for (JobDTO jobDTO : jobDTOList) {
-            jobDTO.setStatusSpecials(statusSpecialMapper
-                    .StatusSpecialJobToStatusSpecialDTO(statusSpecialJobRepository
-                            .findByJob_Id(jobDTO.getId())));
-            jobDTO.setSkills(availableSkillMapper
-                    .AvailbleSkillJobToAvaibleSkill(
-                            availableSkillsJobRepository.findByJob_Id(jobDTO.getId())));
-        }
+                .stream().map(jobMapper::toDTO).toList();
+        enrichJobDTOs(jobDTOList);
         return jobDTOList;
     }
 
@@ -249,6 +215,31 @@ public class JobServiceImp implements JobService {
     }
 
     @Override
+    public List<JobDTO> getFeaturedJobs(GetJobFeaturedRequest request) {
+        int limit = request.getLimit() > 0 ? request.getLimit() : 8;
+        List<Integer> ids = jobRepository.findFeaturedJobIdsRandom(limit);
+        if (ids.isEmpty()) return List.of();
+        List<Job> jobs = jobRepository.findByIdInWithAssociations(ids);
+        List<JobDTO> jobDTOs = jobs.stream().map(jobMapper::toDTO).toList();
+        enrichJobDTOs(jobDTOs);
+        return jobDTOs;
+    }
+
+    private void enrichJobDTOs(List<JobDTO> jobDTOs) {
+        List<Integer> ids = jobDTOs.stream().map(JobDTO::getId).toList();
+        Map<Integer, List<StatusSpecialJob>> statusMap = statusSpecialJobRepository.findByJob_IdIn(ids)
+                .stream().collect(Collectors.groupingBy(s -> s.getJob().getId()));
+        Map<Integer, List<AvailableSkillsJob>> skillMap = availableSkillsJobRepository.findByJob_IdIn(ids)
+                .stream().collect(Collectors.groupingBy(a -> a.getJob().getId()));
+        for (JobDTO jobDTO : jobDTOs) {
+            jobDTO.setStatusSpecials(statusSpecialMapper.StatusSpecialJobToStatusSpecialDTO(
+                    statusMap.getOrDefault(jobDTO.getId(), List.of())));
+            jobDTO.setSkills(availableSkillMapper.AvailbleSkillJobToAvaibleSkill(
+                    skillMap.getOrDefault(jobDTO.getId(), List.of())));
+        }
+    }
+
+    @Override
     @Transactional
     public JobDTO applyJob(ApplyJobRequest applyJobRequest) {
         Job job = jobRepository.findById(applyJobRequest.getIdJob())
@@ -265,13 +256,6 @@ public class JobServiceImp implements JobService {
         jobUserRepository.save(JobUser.builder().id(JobUserKey.builder()
                 .jobId(job.getId()).userId(user.getId()).build())
                 .job(job).user(user).build());
-        JobDTO jobDTO = jobMapper.toDTO(job);
-        jobDTO.setStatusSpecials(statusSpecialMapper
-                .StatusSpecialJobToStatusSpecialDTO(statusSpecialJobRepository
-                        .findByJob_Id(job.getId())));
-        jobDTO.setSkills(availableSkillMapper
-                .AvailbleSkillJobToAvaibleSkill(
-                        availableSkillsJobRepository.findByJob_Id(job.getId())));
-        return jobDTO;
+        return getJobById(job.getId());
     }
 }

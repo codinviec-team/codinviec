@@ -22,5 +22,7 @@ public class SaveUpdateCompanyRequest {
 
     private String logo;
 
+    private Boolean isFeatured;
+
     private Integer companySizeId;
 }

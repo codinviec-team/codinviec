@@ -37,6 +37,7 @@ public class JobDTO {
     private List<StatusSpecialDTO> statusSpecials;
     private List<AvailableSkillDTO> skills;
     private Boolean isAgreedSalary;
+    private Boolean isFeatured;
     private double salary;
     private int idJobStatus;
     private String jobStatusName;
