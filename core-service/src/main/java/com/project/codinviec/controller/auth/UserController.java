@@ -6,10 +6,12 @@ import com.project.codinviec.request.auth.SaveUserRequest;
 import com.project.codinviec.request.auth.UpdateUserRequest;
 import com.project.codinviec.response.BaseResponse;
 import com.project.codinviec.service.auth.UserService;
+import com.project.codinviec.util.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,6 +27,13 @@ public class UserController {
         }
         return ResponseEntity.ok(BaseResponse.success(userService.getAllUsersPage(pageRequestUser), "OK"));
     }
+
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        return ResponseEntity.ok(BaseResponse.success(userService.getProfileUserById(customUserDetails.getUserId()), "OK"));
+    }
+
 
     @GetMapping("/{idUser}")
     public ResponseEntity<?> getUserById(@PathVariable("idUser") String idUser) {

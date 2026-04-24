@@ -1,11 +1,16 @@
 package com.codinviec.auth_service.util;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -16,6 +21,22 @@ public class CookieHelper {
     @Value("${jwt.expiration.refresh}")
     private long expirationRefresh;
 
+
+    public Optional<String> getAccessToken(HttpServletRequest request) {
+        if (request.getCookies() == null) return Optional.empty();
+        return Arrays.stream(request.getCookies())
+                .filter(c -> "access_token".equals(c.getName()))
+                .map(Cookie::getValue)
+                .findFirst();
+    }
+
+    public Optional<String> getRefreshToken(HttpServletRequest request) {
+        if (request.getCookies() == null) return Optional.empty();
+        return Arrays.stream(request.getCookies())
+                .filter(c -> "refresh_token".equals(c.getName()))
+                .map(Cookie::getValue)
+                .findFirst();
+    }
 
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)

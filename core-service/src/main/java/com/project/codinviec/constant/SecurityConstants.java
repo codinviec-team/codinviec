@@ -14,6 +14,7 @@ public final class SecurityConstants {
     // ====================
 
     public static final String[] API_PUBLIC_URLS = {
+            "/api/user/profile/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",

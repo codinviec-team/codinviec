@@ -10,8 +10,8 @@ import java.io.IOException;
 public interface AuthService {
     TokenDTO login(LoginRequest loginRequest);
     String register(RegisterRequest registerRequest);
-    TokenDTO refreshToken(RefreshTokenRequest refreshTokenRequest, HttpServletResponse response);
-    void logout(LogoutRequest logoutRequest, HttpServletResponse response);
+    TokenDTO refreshToken(String refreshtoken, HttpServletResponse response);
+    void logout(String refreshToken, HttpServletResponse response);
     void resendOtp(ResendOtpRequest resendOtpRequest);
     void verifyUserOtp(VerifyUserRequest verifyUserRequest);
     TokenDTO loginGoogleHandler(String code) throws IOException;

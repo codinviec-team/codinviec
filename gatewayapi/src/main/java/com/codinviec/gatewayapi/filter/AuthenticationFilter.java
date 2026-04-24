@@ -3,6 +3,7 @@ package com.codinviec.gatewayapi.filter;
 
 import com.codinviec.gatewayapi.dto.JwtUserDTO;
 import com.codinviec.gatewayapi.exception.security.AccessTokenExceptionHandler;
+import com.codinviec.gatewayapi.util.CookieHelper;
 import com.codinviec.gatewayapi.util.JWTHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -20,6 +21,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class AuthenticationFilter implements GlobalFilter, Ordered {
+    private final CookieHelper  cookieHelper;
     private final JWTHelper jwtHelper;
     /***
      * Key redis note
@@ -47,15 +49,14 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        String token = cookieHelper.getAccessToken(request).orElse(null);
 
         // Không có token coi như chưa login
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (token == null) {
             return chain.filter(exchange);
         }
 
 //        Đã login
-        String token = authHeader.substring(7);
         ServerHttpResponse response = exchange.getResponse();
         JwtUserDTO jwtUserDTO = jwtHelper.verifyAccessToken(token, keyVersionRedis, response);
         if (jwtUserDTO != null) {

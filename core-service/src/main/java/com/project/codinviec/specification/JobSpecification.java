@@ -13,59 +13,41 @@ import java.util.List;
 
 @Component
 public class JobSpecification {
+
     public Specification<Job> searchByName(String keyword) {
-        if (keyword == null || keyword.isEmpty()) return null;
-
-        String pattern = "%" + keyword.toLowerCase() + "%";
-
         return (root, query, cb) -> {
+            if (keyword == null || keyword.trim().isEmpty()) return cb.conjunction();
             try {
-                int id = Integer.parseInt(keyword);
+                int id = Integer.parseInt(keyword.trim());
                 return cb.equal(root.get("id"), id);
             } catch (NumberFormatException e) {
-                return cb.like(cb.lower(root.get("jobPosition")), pattern);
+                return cb.like(cb.lower(root.get("jobPosition")), "%" + keyword.trim().toLowerCase() + "%");
             }
         };
     }
 
     public Specification<Job> searchCompanyName(String companyName) {
-        if (companyName == null || companyName.isBlank()) {
-            return null;
-        }
-
         return (root, query, cb) -> {
-            Join<Object, Object> companyJoin =
-                    root.join("company", JoinType.INNER);
-
-            return cb.like(
-                    cb.lower(companyJoin.get("name")),
-                    "%" + companyName.toLowerCase() + "%"
-            );
+            if (companyName == null || companyName.isBlank()) return cb.conjunction();
+            Join<Object, Object> companyJoin = root.join("company", JoinType.INNER);
+            return cb.like(cb.lower(companyJoin.get("name")), "%" + companyName.trim().toLowerCase() + "%");
         };
     }
 
     public Specification<Job> searchByNameAndProvinceId(String keyword, int provinceId) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-
-            // Nếu có provinceId thêm điều kiện
             if (provinceId != 0) {
                 predicates.add(cb.equal(root.get("provinceId"), provinceId));
             }
-
-            // Nếu keyword là số tìm theo jobPosition id
-            try {
-                int id = Integer.parseInt(keyword);
-                predicates.add(cb.equal(root.get("jobPosition"),id));
-
-            } catch (NumberFormatException e) {
-                // Nếu keyword là chữ LIKE theo jobPosition.name
-                String pattern = "%" + keyword.toLowerCase() + "%";
-                predicates.add(
-                        cb.like(cb.lower(root.get("jobPosition")), pattern)
-                );
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                try {
+                    int id = Integer.parseInt(keyword.trim());
+                    predicates.add(cb.equal(root.get("jobPosition"), id));
+                } catch (NumberFormatException e) {
+                    predicates.add(cb.like(cb.lower(root.get("jobPosition")), "%" + keyword.trim().toLowerCase() + "%"));
+                }
             }
-
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
@@ -78,50 +60,40 @@ public class JobSpecification {
             Double salaryMin,
             Double salaryMax
     ) {
-        return (root,  query, cb) -> {
-
+        return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // ===== Province =====
             if (provinceName != null && !provinceName.isBlank()) {
                 Join<Object, Object> provinceJoin = root.join("province", JoinType.INNER);
-                predicates.add(cb.equal(
-                        cb.lower(provinceJoin.get("name")),
-                        provinceName.toLowerCase()
-                ));
+                predicates.add(cb.equal(cb.lower(provinceJoin.get("name")), provinceName.trim().toLowerCase()));
             }
 
-            // ===== Industry (IN) =====
             if (industryNames != null && !industryNames.isEmpty()) {
                 Join<Object, Object> industryJoin = root.join("industry", JoinType.INNER);
                 CriteriaBuilder.In<String> inClause = cb.in(industryJoin.get("name"));
-                industryNames.forEach(name -> inClause.value(name));
+                industryNames.forEach(inClause::value);
                 predicates.add(inClause);
             }
 
-            // ===== Job Level (IN) =====
             if (jobLevelNames != null && !jobLevelNames.isEmpty()) {
                 Join<Object, Object> jobLevelJoin = root.join("jobLevel", JoinType.INNER);
                 CriteriaBuilder.In<String> inClause = cb.in(jobLevelJoin.get("name"));
-                jobLevelNames.forEach(name -> inClause.value(name));
+                jobLevelNames.forEach(inClause::value);
                 predicates.add(inClause);
             }
 
-            // ===== Employment Type (IN) =====
             if (employmentTypeNames != null && !employmentTypeNames.isEmpty()) {
                 Join<Object, Object> employmentJoin = root.join("employmentType", JoinType.INNER);
                 CriteriaBuilder.In<String> inClause = cb.in(employmentJoin.get("name"));
-                employmentTypeNames.forEach(name -> inClause.value(name));
+                employmentTypeNames.forEach(inClause::value);
                 predicates.add(inClause);
             }
 
-            // ===== Salary =====
             if (salaryMin != null && salaryMax != null) {
                 predicates.add(cb.between(root.get("salary"), salaryMin, salaryMax));
             }
 
-            query.distinct(true); // tránh duplicate khi join nhiều bảng
-
+            query.distinct(true);
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }

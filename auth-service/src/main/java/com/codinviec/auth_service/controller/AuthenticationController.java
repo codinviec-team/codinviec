@@ -45,9 +45,10 @@ public class AuthenticationController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest,
-                                          HttpServletResponse response) {
-        if (refreshTokenRequest.getRefreshToken() == null || refreshTokenRequest.getRefreshToken().isEmpty()) {
+    public ResponseEntity<?> refreshToken(HttpServletRequest request,
+            HttpServletResponse response) {
+        String refreshTokenRequest = cookieHelper.getRefreshToken(request).orElse(null);
+        if (refreshTokenRequest == null || refreshTokenRequest.isEmpty()) {
             throw new RefreshTokenExceptionHandler("Không tìm thấy Refresh Token!");
         }
         try {
@@ -63,9 +64,13 @@ public class AuthenticationController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestBody LogoutRequest logoutRequest, HttpServletResponse response) {
+    public ResponseEntity<?> logout( HttpServletRequest request,HttpServletResponse response) {
         try {
-            authService.logout(logoutRequest, response);
+            String refreshToken = cookieHelper.getRefreshToken(request).orElse(null);
+            if (refreshToken == null || refreshToken.isEmpty()) {
+                throw new RefreshTokenExceptionHandler("Token không hợp lệ!");
+            }
+            authService.logout(refreshToken, response);
             return ResponseEntity.ok(BaseResponse.success("Đăng xuất thành công!", "OK"));
         } catch (RefreshTokenExceptionHandler | ExpireTokenExceptionHandler e) {
             throw new RefreshTokenExceptionHandler("Token không hợp lệ!");
@@ -85,16 +90,17 @@ public class AuthenticationController {
     @GetMapping("/google/callback")
     public void googleCallback(
             @RequestParam("code") String code,
-            HttpServletResponse response, HttpServletRequest  request
-            ) throws IOException {
+            HttpServletResponse response, HttpServletRequest request
+    ) throws IOException {
         TokenDTO tokenDTO = authService.loginGoogleHandler(code);
         cookieHelper.addRefreshTokenCookie(response, tokenDTO.getRefreshToken());
         cookieHelper.addAccessTokenCookies(response, tokenDTO.getAccessToken());
 
         String redirectUrl = UriComponentsBuilder
-                .fromUriString(clientUrl+"/login/google")
+                .fromUriString(clientUrl + "/login")
                 .queryParam("token", tokenDTO.getAccessToken())
                 .queryParam("refresh", tokenDTO.getRefreshToken())
+                .queryParam("devicesId", tokenDTO.getDevicesId())
                 .build()
                 .toUriString();
         response.sendRedirect(redirectUrl);

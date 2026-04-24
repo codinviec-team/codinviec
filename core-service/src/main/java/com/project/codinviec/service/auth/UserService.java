@@ -14,6 +14,7 @@ public interface UserService {
     List<UserDTO> getAllUsers();
     Page<UserDTO> getAllUsersPage(PageRequestUser pageRequestUser);
     UserDTO getUserById(String id);
+    UserDTO getProfileUserById(String id);
     UserDTO saveUser(SaveUserRequest saveUserRequest);
     UserDTO updateUser(String idUser, UpdateUserRequest updateUserRequest);
     UserDTO deleteUser(String idUser);

@@ -112,15 +112,17 @@ public class AuthServiceImp implements AuthService {
         } else {
             redisTemplateDb.opsForValue().set(keyVersionRedis + user.getId(), String.valueOf(tokenVersion));
         }
+        String userDevices = UUID.randomUUID().toString();
 
-        String accessToken = jwtHealper.createAccessToken(user.getRole().getRoleName(), tokenVersion, user.getId(), loginRequest.getDevicesId());
-        String refershToken = jwtHealper.createRefreshToken(user.getRole().getRoleName(), user.getId(), keyRefreshTokenRedis, tokenVersion, loginRequest.getDevicesId());
+        String accessToken = jwtHealper.createAccessToken(user.getRole().getRoleName(), tokenVersion, user.getId(), userDevices);
+        String refershToken = jwtHealper.createRefreshToken(user.getRole().getRoleName(), user.getId(), keyRefreshTokenRedis, tokenVersion, userDevices);
 
-        deviceSessionService.registerDevice(user.getId(), loginRequest.getDevicesId(), keyRefreshTokenRedis);
+        deviceSessionService.registerDevice(user.getId(), userDevices, keyRefreshTokenRedis);
 
         return TokenDTO.builder()
                 .accessToken(accessToken)
                 .refreshToken(refershToken)
+                .devicesId(userDevices)
                 .build();
     }
 
@@ -155,8 +157,8 @@ public class AuthServiceImp implements AuthService {
 
     @Override
     @Transactional
-    public TokenDTO refreshToken(RefreshTokenRequest refreshTokenRequest, HttpServletResponse response) {
-        JwtUserDTO userJwt = jwtHealper.verifyRefreshToken(refreshTokenRequest.getRefreshToken(), keyRefreshTokenRedis, keyVersionRedis, response);
+    public TokenDTO refreshToken(String refreshtoken, HttpServletResponse response) {
+        JwtUserDTO userJwt = jwtHealper.verifyRefreshToken(refreshtoken, keyRefreshTokenRedis, keyVersionRedis, response);
         String accessToken = jwtHealper.createAccessToken(userJwt.getRole(), userJwt.getTokenVersion(), userJwt.getUserId(), userJwt.getDeviceId());
         String refershToken = jwtHealper.createRefreshToken(userJwt.getRole(), userJwt.getUserId(), keyRefreshTokenRedis, userJwt.getTokenVersion(), userJwt.getDeviceId());
         return TokenDTO.builder()
@@ -167,8 +169,8 @@ public class AuthServiceImp implements AuthService {
 
     @Transactional
     @Override
-    public void logout(LogoutRequest logoutRequest, HttpServletResponse response) {
-        JwtUserDTO userJwt = jwtHealper.verifyRefreshToken(logoutRequest.getRefreshToken(), keyRefreshTokenRedis, keyVersionRedis, response);
+    public void logout(String refreshToken,  HttpServletResponse response) {
+        JwtUserDTO userJwt = jwtHealper.verifyRefreshToken(refreshToken, keyRefreshTokenRedis, keyVersionRedis, response);
         deviceSessionService.logoutDevice(userJwt.getUserId(), userJwt.getDeviceId());
         jwtHealper.revokeAllTokens(userJwt.getUserId(), userJwt.getDeviceId(), keyRefreshTokenRedis, response);
     }
@@ -363,6 +365,7 @@ public class AuthServiceImp implements AuthService {
             return TokenDTO.builder()
                     .accessToken(accessToken)
                     .refreshToken(refershToken)
+                    .devicesId(devicedID)
                     .build();
         } catch (Exception e) {
             throw new LoginFaildExceptionHandler("Login google thất bại!");
