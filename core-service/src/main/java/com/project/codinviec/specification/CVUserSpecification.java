@@ -6,9 +6,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CVUserSpecification {
+
     public Specification<CVUser> searchByTitle(String keyword) {
-        if (keyword == null || keyword.isEmpty()) return null;
-        String pattern = "%" + keyword.toLowerCase() + "%";
-        return (root, query, cb) -> cb.like(cb.lower(root.get("title")), pattern);
+        return (root, query, cb) -> {
+            if (keyword == null || keyword.trim().isEmpty()) return cb.conjunction();
+            return cb.like(cb.lower(root.get("title")), "%" + keyword.trim().toLowerCase() + "%");
+        };
     }
 }

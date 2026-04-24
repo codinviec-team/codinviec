@@ -9,6 +9,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,10 +19,10 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Objects;
-import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JWTHelper {
 
     @Autowired
@@ -46,7 +47,7 @@ public class JWTHelper {
      */
     //    user_devices:{userId} = [các giá trị devices]
     private final String keyDevicesId = "user_devices:";
-    private CookieHelper cookieHelper;
+    private final CookieHelper cookieHelper;
 
     @PostConstruct
     public void init() {
@@ -92,7 +93,7 @@ public class JWTHelper {
 //          Kiểm tra versionToken
             Integer tokenVersionInToken = claims.get("tokenVersion", Integer.class);
             Integer tokenVersionInDb = getTokenVersion(userId, keyVersionRedis);
-            if (!tokenVersionInToken.equals(tokenVersionInDb)) {
+            if (!Objects.equals(tokenVersionInToken, tokenVersionInDb)) {
                 throw new JwtException("Token revoked");
             }
 
@@ -123,14 +124,12 @@ public class JWTHelper {
         }
     }
 
-    public boolean checkDevicesIDToken(String userId,String devicesId){
-        try{
-            if(redisTemplateDb.hasKey(keyDevicesId+userId)){
-                Set<String> listKeyDevives = redisTemplateDb.keys(keyDevicesId+userId);
-                return listKeyDevives.contains(devicesId);
-            }
-            return false;
-        }catch (Exception e){
+    public boolean checkDevicesIDToken(String userId, String devicesId) {
+        try {
+            Double score = redisTemplateDb.opsForZSet().score(keyDevicesId + userId, devicesId);
+            return score != null;
+        } catch (Exception e) {
+            log.error("Error checking device ID for userId: {}, devicesId: {}", userId, devicesId, e);
             return false;
         }
     }

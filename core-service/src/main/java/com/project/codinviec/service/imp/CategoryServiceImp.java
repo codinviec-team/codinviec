@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,27 +32,39 @@ public class CategoryServiceImp implements CategoryService {
     private final PageCustomHelper pageCustomHelper;
     private final CategorySpecification categorySpecification;
 
+    private CategoryDTO buildTree(Category category, Map<Integer, List<Category>> childrenMap) {
+        CategoryDTO dto = categoryMapper.categoryToDTONoChildren(category);
+        dto.setChildren(
+                childrenMap.getOrDefault(category.getId(), List.of()).stream()
+                        .map(child -> buildTree(child, childrenMap))
+                        .toList()
+        );
+        return dto;
+    }
+
     @Override
     public List<CategoryDTO> getAllCategories() {
-        return categoryRepository.findAllByParentIdIsNull().stream()
-                .map(categoryMapper::categoryToCategoryDTO)
+        List<Category> all = categoryRepository.findAllCategory();
+
+        Map<Integer, List<Category>> childrenMap = all.stream()
+                .filter(c -> c.getParent() != null)
+                .collect(Collectors.groupingBy(c -> c.getParent().getId()));
+
+        return all.stream()
+                .filter(c -> c.getParent() == null)
+                .map(root -> buildTree(root, childrenMap))
                 .toList();
     }
 
     @Override
     public Page<CategoryDTO> getAllCategoriesPage(PageRequestCustom pageRequestCustom) {
-        // Validate pageCustom
         PageRequestCustom pageRequestValidate = pageCustomHelper.validatePageCustom(pageRequestCustom);
-
-        // Tạo page cho api
         Pageable pageable = PageRequest.of(pageRequestValidate.getPageNumber() - 1, pageRequestValidate.getPageSize());
-
-        // Tạo search
         Specification<Category> spec = Specification.allOf(
                 categorySpecification.searchByName(pageRequestValidate.getKeyword()),
                 categorySpecification.parentIsNull());
         return categoryRepository.findAll(spec, pageable)
-                .map(categoryMapper::categoryToCategoryDTO);
+                .map(categoryMapper::categoryToDTONoChildren);
     }
 
     @Override
@@ -68,11 +82,9 @@ public class CategoryServiceImp implements CategoryService {
             categoryParent = categoryRepository.findById(saveUpdateCategoryRequest.getParentId()).orElseThrow(
                     () -> new NotFoundIdExceptionHandler("Không tìm thấy id cha của category!"));
         }
-
         try {
             Category mappedCategory = categoryMapper.saveCategoryMapper(categoryParent, saveUpdateCategoryRequest);
-            return categoryMapper.categoryToCategoryDTO(
-                    categoryRepository.save(mappedCategory));
+            return categoryMapper.categoryToCategoryDTO(categoryRepository.save(mappedCategory));
         } catch (Exception e) {
             throw new ConflictExceptionHandler("Lỗi thêm category");
         }
@@ -88,10 +100,8 @@ public class CategoryServiceImp implements CategoryService {
         }
         Category category = categoryRepository.findById(idCate)
                 .orElseThrow(() -> new NotFoundIdExceptionHandler("Không tìm thấy id category"));
-
         try {
-            Category mapperBlog = categoryMapper.updateCategoryMapper(idCate, categoryParent,
-                    saveUpdateCategoryRequest);
+            Category mapperBlog = categoryMapper.updateCategoryMapper(idCate, categoryParent, saveUpdateCategoryRequest);
             mapperBlog.setCreatedDate(category.getCreatedDate());
             return categoryMapper.categoryToCategoryDTO(categoryRepository.save(mapperBlog));
         } catch (Exception e) {
@@ -107,5 +117,4 @@ public class CategoryServiceImp implements CategoryService {
         categoryRepository.delete(category);
         return categoryMapper.categoryToCategoryDTO(category);
     }
-
 }

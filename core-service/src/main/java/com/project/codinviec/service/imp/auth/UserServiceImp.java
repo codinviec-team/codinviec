@@ -100,6 +100,14 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
+    public UserDTO getProfileUserById(String id) {
+        User user = userRepository.findById(id).orElseThrow(
+                () -> new NotFoundIdExceptionHandler("Không tìm thấy id user"));
+        UserDTO userDTO = userMapper.userToUserDTO(user);
+        return userDTO;
+    }
+
+    @Override
     public UserDTO saveUser(SaveUserRequest saveUserRequest) {
         // check role
         Role role = null;

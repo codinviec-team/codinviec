@@ -1,15 +1,35 @@
 package com.project.codinviec.util.security;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Optional;
 
 @Component
 public class CookieHelper {
 
+
+    public Optional<String> getAccessToken(HttpServletRequest request) {
+        if (request.getCookies() == null) return Optional.empty();
+        return Arrays.stream(request.getCookies())
+                .filter(c -> "access_token".equals(c.getName()))
+                .map(Cookie::getValue)
+                .findFirst();
+    }
+
+    public Optional<String> getRefreshToken(HttpServletRequest request) {
+        if (request.getCookies() == null) return Optional.empty();
+        return Arrays.stream(request.getCookies())
+                .filter(c -> "refresh_token".equals(c.getName()))
+                .map(Cookie::getValue)
+                .findFirst();
+    }
 
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)

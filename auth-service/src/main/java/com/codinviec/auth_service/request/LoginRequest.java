@@ -15,7 +15,4 @@ public class LoginRequest {
     @NotNull(message = "Mật khẩu không được null")
     private String password;
 
-    @NotBlank(message = "devicesId không được để trống")
-    @NotNull(message = "devicesId không được null")
-    private String devicesId;
 }

@@ -14,18 +14,30 @@ public class CategoryMapper {
 
     public CategoryDTO categoryToCategoryDTO(Category category) {
         if (category == null) return null;
-
         return CategoryDTO.builder()
                 .id(category.getId())
                 .name(category.getName())
                 .parentId(category.getParent() != null ? category.getParent().getId() : 0)
-                .children(toDTOList(category.getChildren())) // đệ quy
+                .children(toDTOList(category.getChildren()))
+                .createdDate(category.getCreatedDate())
+                .updatedDate(category.getUpdatedDate())
                 .build();
     }
+
+    public CategoryDTO categoryToDTONoChildren(Category category) {
+        if (category == null) return null;
+        return CategoryDTO.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .parentId(category.getParent() != null ? category.getParent().getId() : 0)
+                .createdDate(category.getCreatedDate())
+                .updatedDate(category.getUpdatedDate())
+                .build();
+    }
+
     public List<CategoryDTO> toDTOList(List<Category> categories) {
         if (categories == null || categories.isEmpty()) return List.of();
-        return categories.stream()
-                .map(category -> categoryToCategoryDTO(category)).toList();
+        return categories.stream().map(this::categoryToCategoryDTO).toList();
     }
 
     public Category saveCategoryMapper(Category categoryParent,  SaveUpdateCategoryRequest saveUpdateCategoryRequest){

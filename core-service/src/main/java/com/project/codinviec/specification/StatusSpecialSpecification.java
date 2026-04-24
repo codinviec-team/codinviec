@@ -8,8 +8,9 @@ import org.springframework.stereotype.Component;
 public class StatusSpecialSpecification {
 
     public Specification<StatusSpecial> searchByTitle(String keyword) {
-        if (keyword == null || keyword.isEmpty()) return null;
-        String pattern = "%" + keyword.toLowerCase() + "%";
-        return (root, query, cb) -> cb.like(cb.lower(root.get("title")), pattern);
+        return (root, query, cb) -> {
+            if (keyword == null || keyword.trim().isEmpty()) return cb.conjunction();
+            return cb.like(cb.lower(root.get("title")), "%" + keyword.trim().toLowerCase() + "%");
+        };
     }
 }

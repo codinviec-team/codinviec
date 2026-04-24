@@ -19,10 +19,6 @@ public class RedisConfig {
 
     private int port;
 
-//    db0 lưu thông tin block user
-//    db01 accesstoken refreshtoken
-//    db02 cache location
-
     // DB 0
     @Bean(name = "redisConnectionFactoryDb0")
     @Primary

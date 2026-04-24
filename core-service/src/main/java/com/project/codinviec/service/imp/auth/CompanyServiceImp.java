@@ -45,145 +45,64 @@ public class CompanyServiceImp implements CompanyService {
     private final CompanyAddressRepository companyAddressRepository;
     private final CompanyAddressMapper companyAddressMapper;
     private final JobRepository jobRepository;
-
     private final StatusSpecialCompanyRepository statusSpecialCompanyRepository;
     private final StatusSpecialMapper statusSpecialMapper;
 
-    @Override
-    public List<CompanyDTO> getAllCompany() {
-        List<Company> listCompany = companyRepository.findAll();
-        List<String> listIdCompany = listCompany.stream().map(Company::getId).toList();
-
-        List<CompanyAddress> companyAddressList = companyAddressRepository.findByCompanyIdsWithLocation(listIdCompany);
-        List<StatusSpecialCompany> statusSpecialCompanyRepositoryList = statusSpecialCompanyRepository.findByCompanyIdsWithStatus(listIdCompany);
-        List<Object[]> jobList = jobRepository.countJobByCompanyIds(listIdCompany);
-
-
-        Map<String, List<CompanyAddress>> mapCompanyAddress = companyAddressList.stream()
-                .collect(Collectors.groupingBy((a -> a.getCompany().getId())));
-
-        Map<String, List<StatusSpecialCompany>> mapStatusSpecical = statusSpecialCompanyRepositoryList.stream()
-                .collect(Collectors.groupingBy( a-> a.getIdCompany().getId()));
-
-        Map<String, Long> mapJobCount = jobList
-                .stream()
-                .collect(Collectors.toMap(
-                        row -> (String) row[0],
-                        row -> (Long) row[1]
-                ));
-
-        List<CompanyDTO> listCompanyDTO = listCompany.stream().map(companyMapper::companyToCompanyDTO).toList();
-        for (CompanyDTO companyDTO : listCompanyDTO) {
+    private void enrichCompanyDTOs(List<CompanyDTO> companyDTOs) {
+        List<String> ids = companyDTOs.stream().map(CompanyDTO::getId).toList();
+        Map<String, List<CompanyAddress>> mapCompanyAddress = companyAddressRepository
+                .findByCompanyIdsWithLocation(ids).stream()
+                .collect(Collectors.groupingBy(a -> a.getCompany().getId()));
+        Map<String, List<StatusSpecialCompany>> mapStatusSpecial = statusSpecialCompanyRepository
+                .findByCompanyIdsWithStatus(ids).stream()
+                .collect(Collectors.groupingBy(a -> a.getIdCompany().getId()));
+        Map<String, Long> mapJobCount = jobRepository.countJobByCompanyIds(ids).stream()
+                .collect(Collectors.toMap(row -> (String) row[0], row -> (Long) row[1]));
+        for (CompanyDTO companyDTO : companyDTOs) {
             companyDTO.setCompanyAddress(
-                    mapCompanyAddress.getOrDefault(companyDTO.getId(), List.of()).stream().map(a -> companyAddressMapper.toCompanyAddressDTO(a)).toList()
+                    mapCompanyAddress.getOrDefault(companyDTO.getId(), List.of()).stream()
+                            .map(companyAddressMapper::toCompanyAddressDTO).toList()
             );
             companyDTO.setStatusSpecials(
-                   statusSpecialMapper.StatusSpecialCompanyToStatusSpecialDTO(mapStatusSpecical.getOrDefault(companyDTO.getId(), List.of()))
+                    statusSpecialMapper.StatusSpecialCompanyToStatusSpecialDTO(
+                            mapStatusSpecial.getOrDefault(companyDTO.getId(), List.of()))
             );
-            companyDTO.setJobActive(
-                    mapJobCount.getOrDefault(companyDTO.getId(),0L).intValue()
-            );
+            companyDTO.setJobActive(mapJobCount.getOrDefault(companyDTO.getId(), 0L).intValue());
         }
+    }
 
+    @Override
+    public List<CompanyDTO> getAllCompany() {
+        List<CompanyDTO> listCompanyDTO = companyRepository.findAll().stream()
+                .map(companyMapper::companyToCompanyDTO).toList();
+        enrichCompanyDTOs(listCompanyDTO);
         return listCompanyDTO;
     }
 
     @Override
     public List<CompanyDTO> getCompanyFeatured(GetCompanyFeaturedRequest getCompanyFeaturedRequest) {
-        int limit = 8;
-        if (getCompanyFeaturedRequest.getLimit() > 0){
-            limit = getCompanyFeaturedRequest.getLimit();
-        }
-
-        Pageable pageable = PageRequest.of(0,limit );
-
-        List<Company> listCompany = companyRepository.findByIsFeaturedTrue(pageable);
-        List<String> listIdCompany = listCompany.stream().map(Company::getId).toList();
-
-        List<CompanyAddress> companyAddressList = companyAddressRepository.findByCompanyIdsWithLocation(listIdCompany);
-        List<StatusSpecialCompany> statusSpecialCompanyRepositoryList = statusSpecialCompanyRepository.findByCompanyIdsWithStatus(listIdCompany);
-        List<Object[]> jobList = jobRepository.countJobByCompanyIds(listIdCompany);
-
-
-        Map<String, List<CompanyAddress>> mapCompanyAddress = companyAddressList.stream()
-                .collect(Collectors.groupingBy((a -> a.getCompany().getId())));
-
-        Map<String, List<StatusSpecialCompany>> mapStatusSpecical = statusSpecialCompanyRepositoryList.stream()
-                .collect(Collectors.groupingBy( a-> a.getIdCompany().getId()));
-
-        Map<String, Long> mapJobCount = jobList
-                .stream()
-                .collect(Collectors.toMap(
-                        row -> (String) row[0],
-                        row -> (Long) row[1]
-                ));
-
-        List<CompanyDTO> listCompanyDTO = listCompany.stream().map(companyMapper::companyToCompanyDTO).toList();
-        for (CompanyDTO companyDTO : listCompanyDTO) {
-            companyDTO.setCompanyAddress(
-                    mapCompanyAddress.getOrDefault(companyDTO.getId(), List.of()).stream().map(a -> companyAddressMapper.toCompanyAddressDTO(a)).toList()
-            );
-            companyDTO.setStatusSpecials(
-                    statusSpecialMapper.StatusSpecialCompanyToStatusSpecialDTO(mapStatusSpecical.getOrDefault(companyDTO.getId(), List.of()))
-            );
-            companyDTO.setJobActive(
-                    mapJobCount.getOrDefault(companyDTO.getId(),0L).intValue()
-            );
-        }
-
+        int limit = getCompanyFeaturedRequest.getLimit() > 0 ? getCompanyFeaturedRequest.getLimit() : 8;
+        Pageable pageable = PageRequest.of(0, limit);
+        List<CompanyDTO> listCompanyDTO = companyRepository.findByIsFeaturedTrue(pageable).stream()
+                .map(companyMapper::companyToCompanyDTO).toList();
+        enrichCompanyDTOs(listCompanyDTO);
         return listCompanyDTO;
     }
 
     @Override
     public Page<CompanyDTO> getAllCompanyPage(PageRequestCompany pageRequestCompany) {
-        // Validate pageCustom
         PageRequestCompany pageRequestValidate = PageCustomHelper.validatePageCompany(pageRequestCompany);
-        // Tạo page cho api
         Pageable pageable = PageRequest.of(pageRequestValidate.getPageNumber() - 1,
                 pageRequestValidate.getPageSize());
-
-        // Tạo search
-        Specification<Company> spec = Specification.allOf(companySpecification.searchByName(pageRequestValidate.getKeyword())
-                , companySpecification.minEmployees(pageRequestValidate.getMinEmployees()),
+        Specification<Company> spec = Specification.allOf(
+                companySpecification.fetchDetails(),
+                companySpecification.searchByName(pageRequestValidate.getKeyword()),
+                companySpecification.minEmployees(pageRequestValidate.getMinEmployees()),
                 companySpecification.maxEmployees(pageRequestValidate.getMaxEmployees()),
                 companySpecification.hasProvince(pageRequestValidate.getLocation()));
-
-        Page<CompanyDTO> companyDTOPage = companyRepository.findAll(spec, pageable).map(companyMapper::companyToCompanyDTO);
-
-        List<String> listIdCompany = companyDTOPage.stream().map((c)->c.getId()).toList();
-        List<CompanyAddress> companyAddressList = companyAddressRepository.findByCompanyIdsWithLocation(listIdCompany);
-        List<StatusSpecialCompany> statusSpecialCompanyRepositoryList = statusSpecialCompanyRepository.findByCompanyIdsWithStatus(listIdCompany);
-
-//        lấy số lượng việc làm trong công ty
-        List<Object[]> jobList = jobRepository.countJobByCompanyIds(listIdCompany);
-
-//      ============  map tránh lập ============
-        Map<String, List<CompanyAddress>> mapCompanyAddress = companyAddressList.stream()
-                .collect(Collectors.groupingBy((a -> a.getCompany().getId())));
-
-        Map<String, List<StatusSpecialCompany>> mapStatusSpecical = statusSpecialCompanyRepositoryList.stream()
-                .collect(Collectors.groupingBy( a-> a.getIdCompany().getId()));
-
-        Map<String, Long> mapJobCount = jobList
-                .stream()
-                .collect(Collectors.toMap(
-                        row -> (String) row[0],
-                        row -> (Long) row[1]
-                ));
-
-        for (CompanyDTO companyDTO : companyDTOPage.getContent()) {
-            companyDTO.setCompanyAddress(
-                    mapCompanyAddress.getOrDefault(companyDTO.getId(), List.of()).stream().map(a -> companyAddressMapper.toCompanyAddressDTO(a)).toList()
-            );
-
-            companyDTO.setStatusSpecials(
-                    statusSpecialMapper.StatusSpecialCompanyToStatusSpecialDTO(
-                            mapStatusSpecical.getOrDefault(companyDTO.getId(), List.of()))
-            );
-            companyDTO.setJobActive(
-                    mapJobCount.getOrDefault(companyDTO.getId(),0L).intValue()
-            );
-        }
+        Page<CompanyDTO> companyDTOPage = companyRepository.findAll(spec, pageable)
+                .map(companyMapper::companyToCompanyDTO);
+        enrichCompanyDTOs(companyDTOPage.getContent());
         return companyDTOPage;
     }
 
@@ -196,9 +115,7 @@ public class CompanyServiceImp implements CompanyService {
                 .StatusSpecialCompanyToStatusSpecialDTO(statusSpecialCompanyRepository
                         .findByIdCompany_Id(companyDTO.getId())));
         companyDTO.setCompanySize(companySizeMapper.companySizeToCompanySizeDTO(companySizeRepository
-                .findByCompanies_Id(companyDTO
-                        .getId()).orElse(null)));
-
+                .findByCompanies_Id(companyDTO.getId()).orElse(null)));
         companyDTO.setCompanyAddress(
                 companyAddressRepository.findByCompany_Id(companyDTO.getId())
                         .stream().map(companyAddressMapper::toCompanyAddressDTO).toList()
@@ -220,12 +137,9 @@ public class CompanyServiceImp implements CompanyService {
     public CompanyDTO updateCompany(String idCompany, SaveUpdateCompanyRequest saveUpdateCompanyRequest) {
         CompanySize companySize = companySizeRepository.findById(saveUpdateCompanyRequest.getCompanySizeId())
                 .orElseThrow(() -> new NotFoundIdExceptionHandler("Không tìm thấy id company size!"));
-
         Company company = companyRepository.findById(idCompany)
                 .orElseThrow(() -> new NotFoundIdExceptionHandler("Không tìm thấy id company!"));
-
-        Company mappedCompany = companyMapper.updateCompanyMapper(idCompany, companySize,
-                saveUpdateCompanyRequest);
+        Company mappedCompany = companyMapper.updateCompanyMapper(idCompany, companySize, saveUpdateCompanyRequest);
         mappedCompany.setCreatedDate(company.getCreatedDate());
         return companyMapper.companyToCompanyDTO(companyRepository.save(mappedCompany));
     }
