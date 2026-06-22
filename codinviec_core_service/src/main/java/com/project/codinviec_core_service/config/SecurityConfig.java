@@ -1,0 +1,76 @@
+package com.project.codinviec_core_service.config;
+
+import com.project.codinviec_core_service.constant.SecurityConstants;
+import com.project.codinviec_core_service.exception.security.CustomAccessDeniedHandler;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
+public class  SecurityConfig {
+
+    @Value("${client.url}")
+    private String localhost;
+
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.csrf(AbstractHttpConfigurer::disable) // Tắt CSRF cho REST API (có thể bật lại nếu cần)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .securityMatcher("/api/**")
+                .authorizeHttpRequests(auth -> auth
+                        // Public URLs - Không cần authentication (auth, swagger, file)
+                        .requestMatchers(SecurityConstants.API_PUBLIC_URLS).permitAll()
+
+                        // Public GET endpoints - Cho phép xem dữ liệu công khai (chỉ GET
+                        // method)
+                        .requestMatchers(HttpMethod.GET, SecurityConstants.API_PUBLIC_GET_URLS)
+                        .permitAll()
+
+                        // Admin only endpoints - Chỉ ADMIN role (roles, user management)
+                        .requestMatchers(SecurityConstants.ADMIN_URLS).hasRole("ADMIN")
+
+                        // Admin write endpoints - POST/PUT/DELETE master data chỉ dành cho
+                        // ADMIN
+                        .requestMatchers(HttpMethod.POST, SecurityConstants.ADMIN_WRITE_URLS)
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, SecurityConstants.ADMIN_WRITE_URLS)
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, SecurityConstants.ADMIN_WRITE_URLS)
+                        .hasRole("ADMIN")
+
+                        // User write endpoints - POST/PUT/DELETE cho user data (bao gồm ADMIN)
+                        .requestMatchers(HttpMethod.POST, SecurityConstants.USER_WRITE_URLS)
+                        .hasAnyRole("USER", "HR", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, SecurityConstants.USER_WRITE_URLS)
+                        .hasAnyRole("USER", "HR", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, SecurityConstants.USER_WRITE_URLS)
+                        .hasAnyRole("USER", "HR", "ADMIN")
+
+                        // User endpoints - Cần authentication (bao gồm ADMIN)
+                        .requestMatchers(SecurityConstants.USER_URLS)
+                        .hasAnyRole("USER", "HR", "ADMIN"))
+
+                // Disable để khi bị lỗi không tự chuyển sang html mặc định
+                .oauth2Login(AbstractHttpConfigurer::disable)
+                // Cấu hình Exception Handling
+                .exceptionHandling(ex -> ex
+                        // Xử lý khi đã đăng nhập nhưng không có quyền - Trả về 403
+                        .accessDeniedHandler(customAccessDeniedHandler))
+                .httpBasic(AbstractHttpConfigurer::disable) // Tắt Basic Auth
+                .formLogin(AbstractHttpConfigurer::disable); // Tắt form login mặc định
+
+        return http.build();
+    }
+}

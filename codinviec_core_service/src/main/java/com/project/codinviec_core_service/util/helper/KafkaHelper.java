@@ -1,0 +1,40 @@
+package com.project.codinviec_core_service.util.helper;
+
+import com.project.codinviec_core_service.dto.InforEmailDTO;
+import com.project.codinviec_core_service.dto.InforEmailSecurityDTO;
+import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
+
+@Component
+@RequiredArgsConstructor
+public class KafkaHelper {
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
+
+    public void sendKafkaEmailRegister(String topics, InforEmailDTO inforEmailDTO) {
+        try {
+            if (inforEmailDTO == null)
+                throw new Exception("inforEmailDTO is null");
+            String jsonString = objectMapper.writeValueAsString(inforEmailDTO);
+            kafkaTemplate.send(topics, jsonString);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void sendKafkaEmailSecurity(String topics, InforEmailSecurityDTO inforEmailSecurityDTO) {
+        try {
+            if (inforEmailSecurityDTO == null)
+                throw new Exception("inforEmailSecurityDTO is null");
+            String jsonString = objectMapper.writeValueAsString(inforEmailSecurityDTO);
+            kafkaTemplate.send(topics, jsonString);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+
+}

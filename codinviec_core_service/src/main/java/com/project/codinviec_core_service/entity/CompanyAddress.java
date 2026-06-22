@@ -1,0 +1,40 @@
+package com.project.codinviec_core_service.entity;
+
+import com.project.codinviec_core_service.entity.auth.Company;
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "company_address")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class CompanyAddress {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    @ManyToOne
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+
+    @ManyToOne
+    @JoinColumn(name = "province_id", nullable = false)
+    private Province province;
+
+    @ManyToOne
+    @JoinColumn(name = "ward_id", nullable = false)
+    private Ward ward;
+
+    @Column(nullable = false)
+    private String detail;
+
+    // Trụ sở chính / chi nhánh
+    @Column(name = "is_head_office")
+    private Boolean headOffice;
+
+}
+
