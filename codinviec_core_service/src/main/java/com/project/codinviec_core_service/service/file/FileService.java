@@ -1,0 +1,12 @@
+package com.project.codinviec_core_service.service.file;
+
+import org.springframework.core.io.Resource;
+import org.springframework.web.multipart.MultipartFile;
+
+public interface FileService {
+    String saveFiles(MultipartFile file);
+
+    Resource getFile(String fileName);
+
+    void deleteFile(String fileName);
+}

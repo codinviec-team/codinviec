@@ -1,0 +1,23 @@
+package com.project.codinviec_core_service.dto.auth;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class CompanyUserDTO {
+    private String id;
+    private String name;
+    private String description;
+    private String website;
+    private String logo;
+    private Boolean isFeatured;
+    private LocalDateTime createdDate;
+    private LocalDateTime updatedDate;
+}

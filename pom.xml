@@ -13,15 +13,16 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.codinviec</groupId>
+    <groupId>com.project</groupId>
     <artifactId>codinviec</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
     <modules>
-        <module>auth-service</module>
-        <module>gatewayapi</module>
-        <module>notification-service</module>
+        <module>codinviec_auth_service</module>
+        <module>codinviec_core_service</module>
+        <module>codinviec_gateway_service</module>
+        <module>codinviec_notification_service</module>
     </modules>
 
     <properties>

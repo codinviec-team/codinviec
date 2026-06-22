@@ -1,0 +1,19 @@
+package com.project.codinviec_auth_service.service;
+
+import com.project.codinviec_auth_service.dto.RegisterDTO;
+import com.project.codinviec_auth_service.dto.TokenDTO;
+import com.project.codinviec_auth_service.request.*;
+import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+
+public interface AuthService {
+    TokenDTO login(LoginRequest loginRequest);
+    String register(RegisterRequest registerRequest);
+    TokenDTO refreshToken(String refreshtoken, HttpServletResponse response);
+    void logout(String refreshToken, HttpServletResponse response);
+    void resendOtp(ResendOtpRequest resendOtpRequest);
+    void verifyUserOtp(VerifyUserRequest verifyUserRequest);
+    TokenDTO loginGoogleHandler(String code) throws IOException;
+    String buildUrlLoginGoogle();
+}
