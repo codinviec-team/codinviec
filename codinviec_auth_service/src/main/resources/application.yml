@@ -8,6 +8,44 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+
+    hikari:
+      # ===== Pool Sizing =====
+      # Công thức: pool size = (core_count * 2) + effective_spindle_count
+      # Ví dụ: server 4 CPU cores, SSD → 4*2+1 = 9 → dùng 10
+      minimum-idle: 5
+      maximum-pool-size: 10
+
+      # ===== Timeout Settings =====
+      connection-timeout: 30000      # 30s - chờ lấy connection từ pool
+      idle-timeout: 600000           # 10m - connection idle bao lâu thì đóng
+      max-lifetime: 1800000          # 30m - tuổi thọ tối đa connection (< MySQL wait_timeout)
+      keepalive-time: 60000          # 1m  - ping giữ connection sống
+      validation-timeout: 5000       # 5s  - timeout khi validate connection
+
+      # ===== Pool Naming =====
+      pool-name: MyApp-HikariPool
+
+      # ===== Performance Properties =====
+      data-source-properties:
+        # Prepared Statement Cache
+        cachePrepStmts: true
+        prepStmtCacheSize: 250         # số lượng stmt cache per connection
+        prepStmtCacheSqlLimit: 2048    # độ dài SQL tối đa được cache
+
+        # Server-side prepared statements
+        useServerPrepStmts: true
+
+        # Tối ưu session/transaction state
+        useLocalSessionState: true
+        useLocalTransactionState: true
+
+        # Cache metadata
+        cacheResultSetMetadata: true
+        cacheCallableStmts: true
+
+        # Connection timeout
+        connectTimeout: 5000
   jpa:
     hibernate:
       ddl-auto: none
@@ -65,3 +103,8 @@ jwt:
   expiration:
     access: ${JWT_ACCESS_EXPIRED} #15m
     refresh: ${JWT_REFRESH_EXPIRED} #7d
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE}
