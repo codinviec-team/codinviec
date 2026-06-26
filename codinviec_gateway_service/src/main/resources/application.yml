@@ -1,7 +1,6 @@
 spring:
-
   application:
-    name: gatewayapi
+    name: gatewayapi-codinviec
   cloud:
     gateway:
       server:
@@ -19,7 +18,7 @@ spring:
               predicates:
                 - Path=/api/**
 server:
-  port: 8080
+  port: ${SERVER_PORT}
 
 
 #jwt
@@ -50,3 +49,7 @@ redis:
   password: ${REDIS_PASSWORD}
   port: ${REDIS_PORT}
 
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE}

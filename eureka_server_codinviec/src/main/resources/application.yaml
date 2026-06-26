@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: eureka-server-codinviec
+
+
+eureka:
+  client:
+    fetch-registry: false
+    register-with-eureka: false
+
+server:
+  port: ${SERVER_PORT}
+
